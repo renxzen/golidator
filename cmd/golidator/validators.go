@@ -2,51 +2,43 @@ package golidator
 
 import (
 	neturl "net/url"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
 )
 
-func (v *validator) getvalues(i int) (string, string, reflect.Value, error) {
-	field := v.value.Type().Field(i).Name
-	fieldType := v.value.Type().Field(i).Type.Name()
-	value := v.value.Field(i)
-	if v.value.Field(i).Kind() == reflect.Ptr {
-		if v.value.Field(i).IsNil() {
-			message := "Must not be missing from the body"
-			return field, "", reflect.Value{}, errors.New(message)
+func (v *validator) SetValues(i int) {
+	v.fieldIndex = i
+	v.field = v.value.Type().Field(v.fieldIndex).Name
+	v.fieldType = v.value.Type().Field(v.fieldIndex).Type.Name()
+	v.fieldValue = v.value.Field(v.fieldIndex)
+	
+	if v.value.Field(v.fieldIndex).Kind() == reflect.Ptr {
+		if v.value.Field(v.fieldIndex).IsNil() {
+			return
 		}
-		fieldType = v.value.Field(i).Elem().Type().Name()
-		value = v.value.Field(i).Elem()
+		v.fieldType = v.value.Field(v.fieldIndex).Elem().Type().Name()
+		v.fieldValue = v.value.Field(v.fieldIndex).Elem()
 	}
-
-	return field, fieldType, value, nil
 }
 
 func (v *validator) Required() {
-	field, _, _, err := v.getvalues(v.fieldIndex)
-	if err != nil {
-		message := err.Error()
-		v.errors[field] = append(v.errors[field], message)
+	if v.value.Field(v.fieldIndex).IsNil() {
+		message := "Must not be missing from the body"
+		v.errors[v.field] = append(v.errors[v.field], message)
 	}
 }
 
 func (v *validator) Notblank() {
-	field, fieldType, value, err := v.getvalues(v.fieldIndex)
-	if err != nil {
-		return
-	}
-
-	if fieldType != "string" {
+	if v.fieldType != "string" {
 		message := "Invalid type. Must be string"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 
-	if value.String() == "" {
+	if v.fieldValue.String() == "" {
 		message := "Must not be blank"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 }
@@ -57,20 +49,15 @@ func (v *validator) ValidEmail(str string) bool {
 }
 
 func (v *validator) Email() {
-	field, fieldType, value, err := v.getvalues(v.fieldIndex)
-	if err != nil {
-		return
-	}
-
-	if fieldType != "string" {
+	if v.fieldType != "string" {
 		message := "Invalid type. Must be string"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 
-	if !v.ValidEmail(value.String()) {
+	if !v.ValidEmail(v.fieldValue.String()) {
 		message := "Must be a valid email"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 }
@@ -82,58 +69,43 @@ func (v *validator) ValidUrl(str string) bool {
 
 
 func (v *validator) Url() {
-	field, fieldType, value, err := v.getvalues(v.fieldIndex)
-	if err != nil {
-		return
-	}
-
-	if fieldType != "string" {
+	if v.fieldType != "string" {
 		message := "Invalid type. Must be string"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 
-	if !v.ValidUrl(value.String()) {
+	if !v.ValidUrl(v.fieldValue.String()) {
 		message := "Must be a valid url"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 }
 
 func (v *validator) Min() {
-	field, fieldType, value, err := v.getvalues(v.fieldIndex)
-	if err != nil {
-		return
-	}
-
-	if fieldType != "string" {
+	if v.fieldType != "string" {
 		message := "Invalid type. Must be string"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 
-	if len(value.String()) < v.fieldLength {
+	if len(v.fieldValue.String()) < v.fieldLength {
 		message := fmt.Sprintf("Must be at least %v characters long", v.fieldLength)
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 }
 
 func (v *validator) Max() {
-	field, fieldType, value, err := v.getvalues(v.fieldIndex)
-	if err != nil {
-		return
-	}
-
-	if fieldType != "string" {
+	if v.fieldType != "string" {
 		message := "Invalid type. Must be string"
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 		return
 	}
 
-	if len(value.String()) > v.fieldLength {
+	if len(v.fieldValue.String()) > v.fieldLength {
 		message := fmt.Sprintf("Must be at least %v characters long", v.fieldLength)
-		v.errors[field] = append(v.errors[field], message)
+		v.errors[v.field] = append(v.errors[v.field], message)
 	}
 
 	return

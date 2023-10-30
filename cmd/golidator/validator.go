@@ -12,11 +12,13 @@ import (
 const TagName = "validate"
 
 type validator struct {
-	value      reflect.Value
-	errors     map[string][]string
-	// validators map[string]func(map[string][]string, reflect.Value, int, int)
+	value  reflect.Value
+	errors map[string][]string
 
-	fieldIndex int
+	field       string
+	fieldType   string
+	fieldValue  reflect.Value
+	fieldIndex  int
 	fieldLength int
 }
 
@@ -30,19 +32,9 @@ func NewValidate(model any) Validator {
 		value = value.Elem()
 	}
 
-	// validators := make(map[string]func(map[string][]string, reflect.Value, int, int))
-	// validators["required"] = required
-	// validators["notblank"] = NotBlank
-	// validators["email"] = email
-	// validators["url"] = url
-	// validators["min"] = min
-	// validators["max"] = max
-	// validators["notempty"] = notempty
-	// validators["valarray"] = valarray
-
 	return &validator{
-		value:      value,
-		errors:     make(map[string][]string),
+		value:  value,
+		errors: make(map[string][]string),
 		// validators: validators,
 	}
 }
@@ -53,21 +45,21 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 		tag := field.Tag.Get(TagName)
 		validators := strings.Split(tag, ",")
 
+		// get reflect values here to avoid calling "getvalues"
+		// more than one time for each validator
+		v.SetValues(i)
+
 		for _, validator := range validators {
 			args := strings.Split(validator, "=")
 
-			var err error
-			var limit int
-
 			if len(args) > 1 {
-				limit, err = strconv.Atoi(args[1])
+				limit, err := strconv.Atoi(args[1])
 				if err != nil {
 					return v.errors, errors.New("Invalid limit number used in validation")
 				}
+				v.fieldLength = limit
 			}
 
-			v.fieldIndex = i
-			v.fieldLength = limit
 
 			value := reflect.ValueOf(v)
 			method := value.MethodByName(util.Capitalize(args[0]))
@@ -76,10 +68,6 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 			}
 
 			method.Call([]reflect.Value{})
-			// fn := v.validators[args[0]]
-			// if fn != nil {
-			// 	fn(v.errors, v.value, i, limit)
-			// }
 		}
 	}
 	return v.errors, nil
