@@ -15,7 +15,7 @@ type validator struct {
 	value  reflect.Value
 	errors map[string][]string
 
-	field       string
+	fieldName   string
 	fieldType   string
 	fieldValue  reflect.Value
 	fieldIndex  int
@@ -59,7 +59,6 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 				}
 				v.fieldLength = limit
 			}
-
 
 			value := reflect.ValueOf(v)
 			method := value.MethodByName(util.Capitalize(args[0]))
