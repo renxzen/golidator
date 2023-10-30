@@ -22,23 +22,24 @@ func (v *validator) SetValues(i int) {
 	}
 }
 
+func (v *validator) setError(message string)  {
+	v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+}
+
 func (v *validator) Required() {
 	if v.value.Field(v.fieldIndex).IsNil() {
-		message := "Must not be missing from the body"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Must not be missing from the body")
 	}
 }
 
 func (v *validator) Notblank() {
 	if v.fieldType != "string" {
-		message := "Invalid type. Must be string"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Invalid type. Must be string")
 		return
 	}
 
 	if v.fieldValue.String() == "" {
-		message := "Must not be blank"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Must not be blank")
 		return
 	}
 }
@@ -50,14 +51,12 @@ func (v *validator) ValidEmail(str string) bool {
 
 func (v *validator) Email() {
 	if v.fieldType != "string" {
-		message := "Invalid type. Must be string"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Invalid type. Must be string")
 		return
 	}
 
 	if !v.ValidEmail(v.fieldValue.String()) {
-		message := "Must be a valid email"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Must be a valid email")
 		return
 	}
 }
@@ -70,57 +69,49 @@ func (v *validator) ValidUrl(str string) bool {
 
 func (v *validator) Url() {
 	if v.fieldType != "string" {
-		message := "Invalid type. Must be string"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Invalid type. Must be string")
 		return
 	}
 
 	if !v.ValidUrl(v.fieldValue.String()) {
-		message := "Must be a valid url"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Must be a valid url")
 		return
 	}
 }
 
 func (v *validator) Min() {
 	if v.fieldType != "string" {
-		message := "Invalid type. Must be string"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Invalid type. Must be string")
 		return
 	}
 
 	if len(v.fieldValue.String()) < v.fieldLength {
-		message := fmt.Sprintf("Must be at least %v characters long", v.fieldLength)
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError(fmt.Sprintf("Must be at least %v characters long", v.fieldLength))
 		return
 	}
 }
 
 func (v *validator) Max() {
 	if v.fieldType != "string" {
-		message := "Invalid type. Must be string"
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError("Invalid type. Must be string")
 		return
 	}
 
 	if len(v.fieldValue.String()) > v.fieldLength {
-		message := fmt.Sprintf("Must be at least %v characters long", v.fieldLength)
-		v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+		v.setError(fmt.Sprintf("Must be at least %v characters long", v.fieldLength))
 	}
 
 	return
 }
 
 func (v *validator) Notempty() {
-	field := v.value.Type().Field(v.fieldIndex).Name
 	if v.value.Field(v.fieldIndex).Type().Kind() != reflect.Slice {
 		return
 	}
 
 	value := v.value.Field(v.fieldIndex).Len()
 	if value == 0 {
-		message := "Array must not be empty"
-		v.errors[field] = append(v.errors[field], message)
+		v.setError("Array must not be empty")
 		return
 	}
 }
@@ -137,8 +128,7 @@ func (v *validator) Valarray() {
 	}
 
 	if array.Type().Kind() != reflect.Slice {
-		message := "Invalid type. Must be array"
-		v.errors[field] = append(v.errors[field], message)
+		v.setError("Invalid type. Must be array")
 		return
 	}
 
