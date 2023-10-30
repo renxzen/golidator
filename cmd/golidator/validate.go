@@ -2,7 +2,12 @@ package golidator
 
 import "github.com/renxzen/golidator/internal/util"
 
-func Validate(i interface{}) ([]ValidationError, error) {
+type ValidationError struct {
+	Field  string   `json:"field"`
+	Errors []string `json:"errors"`
+}
+
+func Validate(i any) ([]ValidationError, error) {
 	v := NewValidate(i)
 	mapErrors, err := v.GetErrors()
 	errors := make([]ValidationError, 0)

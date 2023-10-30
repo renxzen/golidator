@@ -8,161 +8,154 @@ import (
 	"regexp"
 )
 
-func getvalues(object reflect.Value, i int) (string, string, reflect.Value, error) {
-	field := object.Type().Field(i).Name
-	fieldType := object.Type().Field(i).Type.Name()
-	value := object.Field(i)
-	if object.Field(i).Kind() == reflect.Ptr {
-		if object.Field(i).IsNil() {
+func (v *validator) getvalues(i int) (string, string, reflect.Value, error) {
+	field := v.value.Type().Field(i).Name
+	fieldType := v.value.Type().Field(i).Type.Name()
+	value := v.value.Field(i)
+	if v.value.Field(i).Kind() == reflect.Ptr {
+		if v.value.Field(i).IsNil() {
 			message := "Must not be missing from the body"
 			return field, "", reflect.Value{}, errors.New(message)
 		}
-		fieldType = object.Field(i).Elem().Type().Name()
-		value = object.Field(i).Elem()
+		fieldType = v.value.Field(i).Elem().Type().Name()
+		value = v.value.Field(i).Elem()
 	}
 
 	return field, fieldType, value, nil
 }
 
-func required(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field, _, _, err := getvalues(rValue, i)
+func (v *validator) Required() {
+	field, _, _, err := v.getvalues(v.fieldIndex)
 	if err != nil {
 		message := err.Error()
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
 	}
-
-	return
 }
 
-func NotBlank(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field, fieldType, value, err := getvalues(rValue, i)
+func (v *validator) Notblank() {
+	field, fieldType, value, err := v.getvalues(v.fieldIndex)
 	if err != nil {
 		return
 	}
 
 	if fieldType != "string" {
 		message := "Invalid type. Must be string"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
 		return
 	}
 
 	if value.String() == "" {
 		message := "Must not be blank"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
+		return
 	}
-
-	return
 }
 
-func ValidEmail(str string) bool {
+func (v *validator) ValidEmail(str string) bool {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	return emailRegex.MatchString(str)
 }
 
-func email(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field, fieldType, value, err := getvalues(rValue, i)
+func (v *validator) Email() {
+	field, fieldType, value, err := v.getvalues(v.fieldIndex)
 	if err != nil {
 		return
 	}
 
 	if fieldType != "string" {
 		message := "Invalid type. Must be string"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
 		return
 	}
 
-	if !ValidEmail(value.String()) {
+	if !v.ValidEmail(value.String()) {
 		message := "Must be a valid email"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
+		return
 	}
-
-	return
 }
 
-func ValidUrl(str string) bool {
+func (v *validator) ValidUrl(str string) bool {
 	_, err := neturl.ParseRequestURI(str)
 	return err == nil
 }
 
 
-func url(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field, fieldType, value, err := getvalues(rValue, i)
+func (v *validator) Url() {
+	field, fieldType, value, err := v.getvalues(v.fieldIndex)
 	if err != nil {
 		return
 	}
 
 	if fieldType != "string" {
 		message := "Invalid type. Must be string"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
 		return
 	}
 
-	if !ValidUrl(value.String()) {
+	if !v.ValidUrl(value.String()) {
 		message := "Must be a valid url"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
+		return
 	}
-
-	return
 }
 
-func min(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field, fieldType, value, err := getvalues(rValue, i)
+func (v *validator) Min() {
+	field, fieldType, value, err := v.getvalues(v.fieldIndex)
 	if err != nil {
 		return
 	}
 
 	if fieldType != "string" {
 		message := "Invalid type. Must be string"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
 		return
 	}
 
-	if len(value.String()) < length {
-		message := fmt.Sprintf("Must be at least %v characters long", length)
-		errorsMap[field] = append(errorsMap[field], message)
+	if len(value.String()) < v.fieldLength {
+		message := fmt.Sprintf("Must be at least %v characters long", v.fieldLength)
+		v.errors[field] = append(v.errors[field], message)
+		return
 	}
-
-	return
 }
 
-func max(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field, fieldType, value, err := getvalues(rValue, i)
+func (v *validator) Max() {
+	field, fieldType, value, err := v.getvalues(v.fieldIndex)
 	if err != nil {
 		return
 	}
 
 	if fieldType != "string" {
 		message := "Invalid type. Must be string"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
 		return
 	}
 
-	if len(value.String()) > length {
-		message := fmt.Sprintf("Must be at least %v characters long", length)
-		errorsMap[field] = append(errorsMap[field], message)
+	if len(value.String()) > v.fieldLength {
+		message := fmt.Sprintf("Must be at least %v characters long", v.fieldLength)
+		v.errors[field] = append(v.errors[field], message)
 	}
 
 	return
 }
 
-func notempty(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field := rValue.Type().Field(i).Name
-	if rValue.Field(i).Type().Kind() != reflect.Slice {
+func (v *validator) Notempty() {
+	field := v.value.Type().Field(v.fieldIndex).Name
+	if v.value.Field(v.fieldIndex).Type().Kind() != reflect.Slice {
 		return
 	}
 
-	value := rValue.Field(i).Len()
+	value := v.value.Field(v.fieldIndex).Len()
 	if value == 0 {
 		message := "Array must not be empty"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
+		return
 	}
-
-	return
 }
 
-func valarray(errorsMap map[string][]string, rValue reflect.Value, i int, length int) {
-	field := rValue.Type().Field(i).Name
-	array := rValue.Field(i)
+func (v *validator) Valarray() {
+	field := v.value.Type().Field(v.fieldIndex).Name
+	array := v.value.Field(v.fieldIndex)
 	if array.Kind() == reflect.Ptr {
 		if array.IsNil() {
 			return
@@ -173,7 +166,7 @@ func valarray(errorsMap map[string][]string, rValue reflect.Value, i int, length
 
 	if array.Type().Kind() != reflect.Slice {
 		message := "Invalid type. Must be array"
-		errorsMap[field] = append(errorsMap[field], message)
+		v.errors[field] = append(v.errors[field], message)
 		return
 	}
 
@@ -187,9 +180,7 @@ func valarray(errorsMap map[string][]string, rValue reflect.Value, i int, length
 
 		for j := range summary {
 			summaryField := fmt.Sprintf("%v[%v]: %v", field, i, summary[j].Field)
-			errorsMap[summaryField] = summary[j].Errors
+			v.errors[summaryField] = summary[j].Errors
 		}
 	}
-
-	return
 }
