@@ -1,8 +1,8 @@
-package validator
+package golidator
 
 import (
 	"github.com/renxzen/golidator/internal/util"
-	// "github.com/renxzen/golidator/cmd/validator"
+	"github.com/renxzen/golidator/cmd/validator"
 )
 
 type ValidationError struct {
@@ -11,7 +11,7 @@ type ValidationError struct {
 }
 
 func Validate(i any) ([]ValidationError, error) {
-	v := NewValidate(i)
+	v := validator.NewValidate(i)
 	mapErrors, err := v.GetErrors()
 	errors := make([]ValidationError, 0)
 	for field, arr := range mapErrors {

@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+
+	"github.com/renxzen/golidator/internal/util"
 )
 
 func (v *validator) SetValues(i int) {
@@ -71,27 +73,40 @@ func (v *validator) Url() {
 }
 
 func (v *validator) Min() {
-	if v.fieldType != "string" {
-		v.setError("Invalid type. Must be string")
+	if v.fieldType == "string" {
+		if len(v.fieldValue.String()) < v.fieldLength {
+			v.setError(fmt.Sprintf("Must have more than %v characters", v.fieldLength))
+		}
 		return
 	}
 
-	if len(v.fieldValue.String()) < v.fieldLength {
-		v.setError(fmt.Sprintf("Must be at least %v characters long", v.fieldLength))
+	if v.fieldValue.CanInt() {
+		if v.fieldValue.Int() < int64(v.fieldLength) {
+			v.setError(fmt.Sprintf("Must be more than %v", v.fieldLength))
+		}
 		return
 	}
+
+	v.setError("Invalid type. Must be string or numeric")
+	return
 }
 
 func (v *validator) Max() {
-	if v.fieldType != "string" {
-		v.setError("Invalid type. Must be string")
+	if v.fieldType == "string" {
+		if len(v.fieldValue.String()) > v.fieldLength {
+			v.setError(fmt.Sprintf("Must have less than %v characters", v.fieldLength))
+		}
 		return
 	}
 
-	if len(v.fieldValue.String()) > v.fieldLength {
-		v.setError(fmt.Sprintf("Must be at least %v characters long", v.fieldLength))
+	if v.fieldValue.CanInt() {
+		if v.fieldValue.Int() > int64(v.fieldLength) {
+			v.setError(fmt.Sprintf("Must be less than %v", v.fieldLength))
+		}
+		return
 	}
 
+	v.setError("Invalid type. Must be string or numeric")
 	return
 }
 
@@ -107,8 +122,8 @@ func (v *validator) Notempty() {
 	}
 }
 
-func (v *validator) Valarray() {
-	field := v.value.Type().Field(v.fieldIndex).Name
+func (v *validator) Isarray() {
+	fieldName := v.value.Type().Field(v.fieldIndex).Name
 	array := v.value.Field(v.fieldIndex)
 	if array.Kind() == reflect.Ptr {
 		if array.IsNil() {
@@ -123,17 +138,16 @@ func (v *validator) Valarray() {
 		return
 	}
 
-	leni := array.Len()
-	for i := 0; i < leni; i++ {
-		summary, err := Validate(array.Index(i).Interface())
+	for i := 0; i < array.Len(); i++ {
+		mapErrors, err := NewValidate(array.Index(i).Interface()).GetErrors()
 		if err != nil {
 			// TODO: do something with error
 			return
 		}
 
-		for j := range summary {
-			summaryField := fmt.Sprintf("%v[%v]: %v", field, i, summary[j].Field)
-			v.errors[summaryField] = summary[j].Errors
+		for subField, arr := range mapErrors {
+			subFieldName := fmt.Sprintf("%v[%v]: %v", fieldName, i, util.ToSnakeCase(subField))
+			v.errors[subFieldName] = arr
 		}
 	}
 }
