@@ -9,33 +9,37 @@ import (
 	"github.com/renxzen/golidator/internal/util"
 )
 
-func (v *validator) SetValues(i int) {
-	v.fieldIndex = i
-	v.fieldName = v.value.Type().Field(v.fieldIndex).Name
-	v.fieldType = v.value.Type().Field(v.fieldIndex).Type.Name()
-	v.fieldValue = v.value.Field(v.fieldIndex)
+func (v *validator) setValues(i int) {
+	v.fieldValue = v.value.Field(i)
+	v.fieldValueType = v.fieldValue.Type()
 
-	if v.value.Field(v.fieldIndex).Kind() == reflect.Ptr {
-		if v.value.Field(v.fieldIndex).IsNil() {
+	v.typeField = v.value.Type().Field(i)
+	v.typeFieldName = v.typeField.Name
+	v.typeFieldTypeName = v.typeField.Type.Name()
+
+	if v.fieldValue.Kind() == reflect.Ptr {
+		if v.fieldValue.IsNil() {
 			return
 		}
-		v.fieldType = v.value.Field(v.fieldIndex).Elem().Type().Name()
-		v.fieldValue = v.value.Field(v.fieldIndex).Elem()
+
+		v.fieldValue = v.fieldValue.Elem()
+		v.fieldValueType = v.fieldValue.Type()
+		v.typeFieldTypeName = v.fieldValueType.Name()
 	}
 }
 
 func (v *validator) setError(message string) {
-	v.errors[v.fieldName] = append(v.errors[v.fieldName], message)
+	v.errors[v.typeFieldName] = append(v.errors[v.typeFieldName], message)
 }
 
 func (v *validator) Required() {
-	if v.value.Field(v.fieldIndex).IsNil() {
+	if v.fieldValue.IsNil() {
 		v.setError("Must not be missing from the body")
 	}
 }
 
 func (v *validator) Notblank() {
-	if v.fieldType != "string" {
+	if v.typeFieldTypeName != "string" {
 		v.setError("Invalid type. Must be string")
 		return
 	}
@@ -47,7 +51,7 @@ func (v *validator) Notblank() {
 }
 
 func (v *validator) Email() {
-	if v.fieldType != "string" {
+	if v.typeFieldTypeName != "string" {
 		v.setError("Invalid type. Must be string")
 		return
 	}
@@ -60,7 +64,7 @@ func (v *validator) Email() {
 }
 
 func (v *validator) Url() {
-	if v.fieldType != "string" {
+	if v.typeFieldTypeName != "string" {
 		v.setError("Invalid type. Must be string")
 		return
 	}
@@ -73,7 +77,7 @@ func (v *validator) Url() {
 }
 
 func (v *validator) Min() {
-	if v.fieldType == "string" {
+	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) < v.fieldLength {
 			v.setError(fmt.Sprintf("Must have more than %v characters", v.fieldLength))
 		}
@@ -99,7 +103,7 @@ func (v *validator) Min() {
 }
 
 func (v *validator) Max() {
-	if v.fieldType == "string" {
+	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) > v.fieldLength {
 			v.setError(fmt.Sprintf("Must have less than %v characters", v.fieldLength))
 		}
@@ -125,11 +129,11 @@ func (v *validator) Max() {
 }
 
 func (v *validator) Notempty() {
-	if v.value.Field(v.fieldIndex).Type().Kind() != reflect.Slice {
+	if v.fieldValueType.Kind() != reflect.Slice {
 		return
 	}
 
-	value := v.value.Field(v.fieldIndex).Len()
+	value := v.fieldValue.Len()
 	if value == 0 {
 		v.setError("Array must not be empty")
 		return
@@ -137,30 +141,28 @@ func (v *validator) Notempty() {
 }
 
 func (v *validator) Isarray() {
-	fieldName := v.value.Type().Field(v.fieldIndex).Name
-	array := v.value.Field(v.fieldIndex)
-	if array.Kind() == reflect.Ptr {
-		if array.IsNil() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		if v.fieldValue.IsNil() {
 			return
 		}
 
-		array = array.Elem()
+		v.fieldValue = v.fieldValue.Elem()
 	}
 
-	if array.Type().Kind() != reflect.Slice {
+	if v.fieldValueType.Kind() != reflect.Slice {
 		v.setError("Invalid type. Must be array")
 		return
 	}
 
-	for i := 0; i < array.Len(); i++ {
-		mapErrors, err := NewValidate(array.Index(i).Interface()).GetErrors()
+	for i := 0; i < v.fieldValue.Len(); i++ {
+		mapErrors, err := NewValidate(v.fieldValue.Index(i).Interface()).GetErrors()
 		if err != nil {
 			// TODO: do something with error
 			return
 		}
 
 		for subField, arr := range mapErrors {
-			subFieldName := fmt.Sprintf("%v[%v]: %v", fieldName, i, util.ToSnakeCase(subField))
+			subFieldName := fmt.Sprintf("%v[%v]: %v", v.typeFieldName, i, util.ToSnakeCase(subField))
 			v.errors[subFieldName] = arr
 		}
 	}
