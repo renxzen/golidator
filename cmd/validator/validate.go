@@ -1,6 +1,9 @@
-package golidator
+package validator
 
-import "github.com/renxzen/golidator/internal/util"
+import (
+	"github.com/renxzen/golidator/internal/util"
+	// "github.com/renxzen/golidator/cmd/validator"
+)
 
 type ValidationError struct {
 	Field  string   `json:"field"`

@@ -1,7 +1,8 @@
-package golidator
+package validator
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -35,27 +36,24 @@ func NewValidate(model any) Validator {
 	return &validator{
 		value:  value,
 		errors: make(map[string][]string),
-		// validators: validators,
 	}
 }
 
 func (v *validator) GetErrors() (map[string][]string, error) {
 	for i := 0; i < v.value.NumField(); i++ {
 		field := v.value.Type().Field(i)
-		tag := field.Tag.Get(TagName)
-		validators := strings.Split(tag, ",")
+		validateTag := field.Tag.Get(TagName)
+		validators := strings.Split(validateTag, ",")
 
-		// get reflect values here to avoid calling "getvalues"
-		// more than one time for each validator
 		v.SetValues(i)
-
 		for _, validator := range validators {
 			args := strings.Split(validator, "=")
 
 			if len(args) > 1 {
 				limit, err := strconv.Atoi(args[1])
 				if err != nil {
-					return v.errors, errors.New("Invalid limit number used in validation")
+					message := fmt.Sprintf(`Invalid parameter "%s" used in "%s" validation.`, args[1], args[0])
+					return v.errors, errors.New(message)
 				}
 				v.fieldLength = limit
 			}
@@ -63,7 +61,8 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 			value := reflect.ValueOf(v)
 			method := value.MethodByName(util.Capitalize(args[0]))
 			if !method.IsValid() {
-				// return v.errors, ERROR TODEFINE
+				message := fmt.Sprintf(`Validator "%s" not found.`, args[0])
+				return v.errors, errors.New(message)
 			}
 
 			method.Call([]reflect.Value{})
@@ -71,3 +70,7 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 	}
 	return v.errors, nil
 }
+
+// validators
+
+
