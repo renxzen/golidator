@@ -87,6 +87,13 @@ func (v *validator) Min() {
 		return
 	}
 
+	if v.fieldValue.CanFloat() {
+		if v.fieldValue.Float() < float64(v.fieldLength) {
+			v.setError(fmt.Sprintf("Must be more than %v", v.fieldLength))
+		}
+		return
+	}
+
 	v.setError("Invalid type. Must be string or numeric")
 	return
 }
@@ -101,6 +108,13 @@ func (v *validator) Max() {
 
 	if v.fieldValue.CanInt() {
 		if v.fieldValue.Int() > int64(v.fieldLength) {
+			v.setError(fmt.Sprintf("Must be less than %v", v.fieldLength))
+		}
+		return
+	}
+
+	if v.fieldValue.CanFloat() {
+		if v.fieldValue.Float() < float64(v.fieldLength) {
 			v.setError(fmt.Sprintf("Must be less than %v", v.fieldLength))
 		}
 		return
