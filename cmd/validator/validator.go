@@ -16,9 +16,9 @@ type validator struct {
 	value  reflect.Value
 	errors map[string][]string
 
-	fieldValue        reflect.Value
-	fieldValueType    reflect.Type
-	fieldLength       int
+	fieldValue     reflect.Value
+	fieldValueType reflect.Type
+	fieldLength    int
 
 	typeField         reflect.StructField
 	typeFieldName     string
@@ -28,6 +28,9 @@ type validator struct {
 type Validator interface {
 	GetErrors() (map[string][]string, error)
 }
+
+
+// constructor
 
 func NewValidate(model any) Validator {
 	value := reflect.ValueOf(model)
@@ -41,9 +44,31 @@ func NewValidate(model any) Validator {
 	}
 }
 
+// private methods
+
+func (v *validator) setError(message string) {
+	v.errors[v.typeFieldName] = append(v.errors[v.typeFieldName], message)
+}
+
+// public methods
+
 func (v *validator) GetErrors() (map[string][]string, error) {
 	for i := 0; i < v.value.NumField(); i++ {
-		v.setValues(i)
+		// set field data
+		v.fieldValue = v.value.Field(i)
+		v.fieldValueType = v.fieldValue.Type()
+
+		v.typeField = v.value.Type().Field(i)
+		v.typeFieldName = v.typeField.Name
+		v.typeFieldTypeName = v.typeField.Type.Name()
+
+		if (v.fieldValue.Kind() == reflect.Ptr) && !v.fieldValue.IsNil() {
+			v.fieldValue = v.fieldValue.Elem()
+			v.fieldValueType = v.fieldValue.Type()
+			v.typeFieldTypeName = v.fieldValueType.Name()
+		}
+
+		// get validators from tag
 		validateTag := v.typeField.Tag.Get(TagName)
 		validators := strings.Split(validateTag, ",")
 

@@ -9,29 +9,6 @@ import (
 	"github.com/renxzen/golidator/internal/util"
 )
 
-func (v *validator) setValues(i int) {
-	v.fieldValue = v.value.Field(i)
-	v.fieldValueType = v.fieldValue.Type()
-
-	v.typeField = v.value.Type().Field(i)
-	v.typeFieldName = v.typeField.Name
-	v.typeFieldTypeName = v.typeField.Type.Name()
-
-	if v.fieldValue.Kind() == reflect.Ptr {
-		if v.fieldValue.IsNil() {
-			return
-		}
-
-		v.fieldValue = v.fieldValue.Elem()
-		v.fieldValueType = v.fieldValue.Type()
-		v.typeFieldTypeName = v.fieldValueType.Name()
-	}
-}
-
-func (v *validator) setError(message string) {
-	v.errors[v.typeFieldName] = append(v.errors[v.typeFieldName], message)
-}
-
 func (v *validator) Required() {
 	if v.fieldValue.IsNil() {
 		v.setError("Must not be missing from the body")
