@@ -3,6 +3,8 @@ package golidator
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/renxzen/golidator/cmd/validator"
 )
 
 func TestNotBlankNoErrors(t *testing.T) {
@@ -60,7 +62,7 @@ func TestNotBlankWithErrors(t *testing.T) {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
 	}
 
-	message := "Must not be blank"
+	message := validator.NOTBLANK_ERROR
 	for _, validationError := range errors {
 		for _, error := range validationError.Errors {
 			if error != message {
