@@ -11,44 +11,44 @@ import (
 
 func (v *validator) Required() {
 	if v.fieldValue.IsNil() {
-		v.setError("Must not be missing from the body")
+		v.setError(REQUIRED_ERROR)
 	}
 }
 
 func (v *validator) Notblank() {
 	if v.typeFieldTypeName != "string" {
-		v.setError("Invalid type. Must be string")
+		v.setError(NOTSTRING_ERROR)
 		return
 	}
 
 	if v.fieldValue.String() == "" {
-		v.setError("Must not be blank")
+		v.setError(NOTBLANK_ERROR)
 		return
 	}
 }
 
 func (v *validator) Email() {
 	if v.typeFieldTypeName != "string" {
-		v.setError("Invalid type. Must be string")
+		v.setError(NOTSTRING_ERROR)
 		return
 	}
 
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if !emailRegex.MatchString(v.fieldValue.String()) {
-		v.setError("Must be a valid email")
+		v.setError(EMAIL_ERROR)
 		return
 	}
 }
 
 func (v *validator) Url() {
 	if v.typeFieldTypeName != "string" {
-		v.setError("Invalid type. Must be string")
+		v.setError(NOTSTRING_ERROR)
 		return
 	}
 
 	_, err := url.ParseRequestURI(v.fieldValue.String())
 	if err != nil {
-		v.setError("Must be a valid url")
+		v.setError(URL_ERROR)
 		return
 	}
 }
@@ -56,63 +56,63 @@ func (v *validator) Url() {
 func (v *validator) Min() {
 	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) < v.fieldLength {
-			v.setError(fmt.Sprintf("Must have more than %v characters", v.fieldLength))
+			v.setError(fmt.Sprintf(MIN_STRING_ERROR, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanInt() {
 		if v.fieldValue.Int() < int64(v.fieldLength) {
-			v.setError(fmt.Sprintf("Must be more than %v", v.fieldLength))
+			v.setError(fmt.Sprintf(MIN_NUMERIC_ERROR, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanFloat() {
 		if v.fieldValue.Float() < float64(v.fieldLength) {
-			v.setError(fmt.Sprintf("Must be more than %v", v.fieldLength))
+			v.setError(fmt.Sprintf(MIN_NUMERIC_ERROR, v.fieldLength))
 		}
 		return
 	}
 
-	v.setError("Invalid type. Must be string or numeric")
-	return
+	v.setError(NOTSTRINGORNUMERIC_ERROR)
 }
 
 func (v *validator) Max() {
 	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) > v.fieldLength {
-			v.setError(fmt.Sprintf("Must have less than %v characters", v.fieldLength))
+			v.setError(fmt.Sprintf(MAX_STRING_ERROR, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanInt() {
 		if v.fieldValue.Int() > int64(v.fieldLength) {
-			v.setError(fmt.Sprintf("Must be less than %v", v.fieldLength))
+			v.setError(fmt.Sprintf(MAX_NUMERIC_ERROR, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanFloat() {
 		if v.fieldValue.Float() < float64(v.fieldLength) {
-			v.setError(fmt.Sprintf("Must be less than %v", v.fieldLength))
+			v.setError(fmt.Sprintf(MAX_NUMERIC_ERROR, v.fieldLength))
 		}
 		return
 	}
 
-	v.setError("Invalid type. Must be string or numeric")
+	v.setError(NOTSTRINGORNUMERIC_ERROR)
 	return
 }
 
 func (v *validator) Notempty() {
 	if v.fieldValueType.Kind() != reflect.Slice {
+		// TODO: do something to notify that using array validator on non array field
 		return
 	}
 
 	value := v.fieldValue.Len()
 	if value == 0 {
-		v.setError("Array must not be empty")
+		v.setError(NOTEMPTY_ERROR)
 		return
 	}
 }
@@ -127,14 +127,14 @@ func (v *validator) Isarray() {
 	}
 
 	if v.fieldValueType.Kind() != reflect.Slice {
-		v.setError("Invalid type. Must be array")
+		v.setError(NOTARRAY_ERROR)
 		return
 	}
 
 	for i := 0; i < v.fieldValue.Len(); i++ {
 		mapErrors, err := NewValidate(v.fieldValue.Index(i).Interface()).GetErrors()
 		if err != nil {
-			// TODO: do something with error
+			// TODO: do something to notify the error
 			return
 		}
 
