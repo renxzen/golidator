@@ -94,7 +94,7 @@ func (v *validator) Max() {
 	}
 
 	if v.fieldValue.CanFloat() {
-		if v.fieldValue.Float() < float64(v.fieldLength) {
+		if v.fieldValue.Float() > float64(v.fieldLength) {
 			v.setError(fmt.Sprintf(MAX_NUMERIC_ERROR, v.fieldLength))
 		}
 		return
