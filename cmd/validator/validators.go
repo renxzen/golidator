@@ -106,7 +106,7 @@ func (v *validator) Max() {
 
 func (v *validator) Notempty() {
 	if v.fieldValueType.Kind() != reflect.Slice {
-		// TODO: do something to notify that using array validator on non array field
+		v.setError(NOTARRAY_ERROR)
 		return
 	}
 
