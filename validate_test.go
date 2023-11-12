@@ -99,3 +99,40 @@ func TestEmailNoErrors(t *testing.T) {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
 	}
 }
+
+func TestEmailInvalidValueError(t *testing.T) {
+	type Request struct {
+		Field1 string  `validate:"email"`
+		Field2 *string `validate:"email"`
+	}
+
+	field2 := "renxzen@g.n"
+	input := Request{
+		Field1: "renxzen@gmail",
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 2 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
+	}
+
+	message := validator.EMAIL_ERROR
+	for _, validationError := range errors {
+		for _, error := range validationError.Errors {
+			if error != message {
+				t.Errorf("Expected: %v. Result: %v", message, error)
+			}
+		}
+	}
+}
