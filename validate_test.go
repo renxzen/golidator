@@ -614,3 +614,109 @@ func TestMaxInvalidTypeError(t *testing.T) {
 		}
 	}
 }
+
+func TestNotemptyOk(t *testing.T) {
+	type Request struct {
+		Field1 []int  `validate:"notempty"`
+		Field2 []*int `validate:"notempty"`
+		Field3 *[]int `validate:"notempty"`
+	}
+
+	field2 := 1
+	field3 := []int{1}
+	input := Request{
+		Field1: []int{1},
+		Field2: []*int{&field2},
+		Field3: &field3,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestNotemptyError(t *testing.T) {
+	type Request struct {
+		Field1 []int  `validate:"notempty"`
+		Field2 []*int `validate:"notempty"`
+		Field3 *[]int `validate:"notempty"`
+	}
+
+	field3 := []int{}
+	input := Request{
+		Field1: []int{},
+		Field2: []*int{},
+		Field3: &field3,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 3 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 3, len(errors))
+	}
+
+	message := validator.NOTEMPTY_ERROR
+	for _, validationError := range errors {
+		for _, error := range validationError.Errors {
+			if error != message {
+				t.Errorf("Expected: %v. Result: %v", message, error)
+			}
+		} }
+}
+
+func TestNotemptyInvalidTypeError(t *testing.T) {
+	type Request struct {
+		Field1 int      `validate:"notempty"`
+		Field2 *float64 `validate:"notempty"`
+	}
+
+	field2 := 420.0
+	input := Request{
+		Field1: 69.0,
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 2 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
+	}
+
+	message := validator.NOTARRAY_ERROR
+	for _, validationError := range errors {
+		for _, error := range validationError.Errors {
+			if error != message {
+				t.Errorf("Expected: %v. Result: %v", message, error)
+			}
+		}
+	}
+}
