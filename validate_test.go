@@ -361,7 +361,7 @@ func TestMinStringOk(t *testing.T) {
 	}
 }
 
-func TestMinStringError(t *testing.T) {
+func TestMinError(t *testing.T) {
 	type Request struct {
 		Field1 int      `validate:"min=5"`
 		Field2 *int     `validate:"min=5"`
@@ -413,6 +413,175 @@ func TestMinInvalidTypeError(t *testing.T) {
 	type Request struct {
 		Field1 bool `validate:"min"`
 		Field2 *bool `validate:"min"`
+	}
+
+	field2 := true
+	input := Request{
+		Field1: false,
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 2 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
+	}
+
+	message := validator.NOTSTRINGORNUMERIC_ERROR
+	for _, validationError := range errors {
+		for _, error := range validationError.Errors {
+			if error != message {
+				t.Errorf("Expected: %v. Result: %v", message, error)
+			}
+		}
+	}
+}
+
+func TestMaxIntOk(t *testing.T) {
+	type Request struct {
+		Field1 int  `validate:"max=5"`
+		Field2 *int `validate:"max=5"`
+	}
+
+	field2 := 5
+	input := Request{
+		Field1: 4,
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestMaxFloatOk(t *testing.T) {
+	type Request struct {
+		Field1 float32  `validate:"max=5"`
+		Field2 *float64 `validate:"max=5"`
+	}
+
+	field2 := 4.0
+	input := Request{
+		Field1: 4.99,
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestMaxStringOk(t *testing.T) {
+	type Request struct {
+		Field1 string  `validate:"max=5"`
+		Field2 *string `validate:"max=5"`
+	}
+
+	field2 := "abcde"
+	input := Request{
+		Field1: "abcd",
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestMaxError(t *testing.T) {
+	type Request struct {
+		Field1 int      `validate:"max=5"`
+		Field2 *int     `validate:"max=5"`
+		Field3 float64  `validate:"max=5"`
+		Field4 *float64 `validate:"max=5"`
+		Field5 string   `validate:"max=5"`
+		Field6 *string  `validate:"max=5"`
+	}
+
+	field2 := 6
+	field4 := 5.99
+	field6 := "abcdef"
+	input := Request{
+		Field1: 6,
+		Field2: &field2,
+		Field3: 5.01,
+		Field4: &field4,
+		Field5: "abdcef",
+		Field6: &field6,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 6 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
+	}
+
+	pattern := `^Must (have|be) less or equal than`
+	re := regexp.MustCompile(pattern)
+	for _, validationError := range errors {
+		for _, error := range validationError.Errors {
+			if !re.MatchString(error) {
+				t.Errorf("Expected to match: %v. Result: %v", pattern, error)
+			}
+		}
+	}
+}
+
+func TestMaxInvalidTypeError(t *testing.T) {
+	type Request struct {
+		Field1 bool `validate:"max"`
+		Field2 *bool `validate:"max"`
 	}
 
 	field2 := true
