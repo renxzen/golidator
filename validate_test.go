@@ -71,3 +71,31 @@ func TestNotBlankWithErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestEmailNoErrors(t *testing.T) {
+	type Request struct {
+		Field1 string  `validate:"email"`
+		Field2 *string `validate:"email"`
+	}
+
+	field2 := "renxzen@gmail.com"
+	input := Request{
+		Field1: "renxzen@gmail.com",
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
