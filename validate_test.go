@@ -7,7 +7,7 @@ import (
 	"github.com/renxzen/golidator/cmd/validator"
 )
 
-func TestNotBlankNoErrors(t *testing.T) {
+func TestNotBlankOk(t *testing.T) {
 	type Request struct {
 		Field1 string  `validate:"notblank"`
 		Field2 *string `validate:"notblank"`
@@ -72,7 +72,7 @@ func TestNotBlankWithErrors(t *testing.T) {
 	}
 }
 
-func TestEmailNoErrors(t *testing.T) {
+func TestEmailOk(t *testing.T) {
 	type Request struct {
 		Field1 string  `validate:"email"`
 		Field2 *string `validate:"email"`
@@ -174,7 +174,7 @@ func TestEmailInvalidTypeError(t *testing.T) {
 	}
 }
 
-func TestUrlNoErrors(t *testing.T) {
+func TestUrlOk(t *testing.T) {
 	type Request struct {
 		Field1 string  `validate:"url"`
 		Field2 *string `validate:"url"`
@@ -273,5 +273,89 @@ func TestUrlInvalidTypeError(t *testing.T) {
 				t.Errorf("Expected: %v. Result: %v", message, error)
 			}
 		}
+	}
+}
+
+func TestMinIntOk(t *testing.T) {
+	type Request struct {
+		Field1 int  `validate:"min=5"`
+		Field2 *int `validate:"min=5"`
+	}
+
+	field2 := 5
+	input := Request{
+		Field1: 6,
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestMinFloatOk(t *testing.T) {
+	type Request struct {
+		Field1 float32  `validate:"min=5"`
+		Field2 *float64 `validate:"min=5"`
+	}
+
+	field2 := 5.1
+	input := Request{
+		Field1: 5.01,
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestMinStringOk(t *testing.T) {
+	type Request struct {
+		Field1 string  `validate:"min=5"`
+		Field2 *string `validate:"min=5"`
+	}
+
+	field2 := "abcde"
+	input := Request{
+		Field1: "abcdef",
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
 	}
 }
