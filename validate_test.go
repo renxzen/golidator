@@ -2,6 +2,7 @@ package golidator
 
 import (
 	"encoding/json"
+	"regexp"
 	"testing"
 
 	"github.com/renxzen/golidator/cmd/validator"
@@ -139,7 +140,7 @@ func TestEmailInvalidValueError(t *testing.T) {
 
 func TestEmailInvalidTypeError(t *testing.T) {
 	type Request struct {
-		Field1 int  `validate:"email"`
+		Field1 int      `validate:"email"`
 		Field2 *float64 `validate:"email"`
 	}
 
@@ -241,7 +242,7 @@ func TestUrlInvalidValueError(t *testing.T) {
 
 func TestUrlInvalidTypeError(t *testing.T) {
 	type Request struct {
-		Field1 int  `validate:"url"`
+		Field1 int      `validate:"url"`
 		Field2 *float64 `validate:"url"`
 	}
 
@@ -357,5 +358,90 @@ func TestMinStringOk(t *testing.T) {
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestMinStringError(t *testing.T) {
+	type Request struct {
+		Field1 int      `validate:"min=5"`
+		Field2 *int     `validate:"min=5"`
+		Field3 float64  `validate:"min=5"`
+		Field4 *float64 `validate:"min=5"`
+		Field5 string   `validate:"min=5"`
+		Field6 *string  `validate:"min=5"`
+	}
+
+	field2 := 4
+	field4 := 4.99
+	field6 := "abcd"
+	input := Request{
+		Field1: 4,
+		Field2: &field2,
+		Field3: 4.99,
+		Field4: &field4,
+		Field5: "abdc",
+		Field6: &field6,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 6 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
+	}
+
+	pattern := `^Must (have|be) more or equal than`
+	re := regexp.MustCompile(pattern)
+	for _, validationError := range errors {
+		for _, error := range validationError.Errors {
+			if !re.MatchString(error) {
+				t.Errorf("Expected to match: %v. Result: %v", pattern, error)
+			}
+		}
+	}
+}
+
+func TestMinInvalidTypeError(t *testing.T) {
+	type Request struct {
+		Field1 bool `validate:"min"`
+		Field2 *bool `validate:"min"`
+	}
+
+	field2 := true
+	input := Request{
+		Field1: false,
+		Field2: &field2,
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 2 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
+	}
+
+	message := validator.NOTSTRINGORNUMERIC_ERROR
+	for _, validationError := range errors {
+		for _, error := range validationError.Errors {
+			if error != message {
+				t.Errorf("Expected: %v. Result: %v", message, error)
+			}
+		}
 	}
 }
