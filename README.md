@@ -63,6 +63,14 @@ if len(validationErrors) > 0 {
 - `max`: Validates that a string or numeric value is less than or equal to a specified limit.
 - `isarray`: Ensures that a field is a non-nil array and validates its elements recursively.
 
+## Todo
+
+- custom validators
+- validate array without `isarray`
+- optimize reflection in loops
+- simplify conditional checks
+- reduce redundancy with type errors
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
