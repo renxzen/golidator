@@ -720,3 +720,91 @@ func TestNotemptyInvalidTypeError(t *testing.T) {
 		}
 	}
 }
+
+func TestArrayOk(t *testing.T) {
+	type SubRequest struct {
+		Field1 string `validate:"notblank,email"`
+		Field2 string `validate:"notblank,max=20"`
+
+	}
+
+	type Request struct {
+		Array []SubRequest  `validate:"isarray"`
+	}
+
+	input := Request{
+		Array: []SubRequest{
+			{
+				Field1: "renzo@gmail.com",
+				Field2: "Renzo Mondragón",
+			},
+			{
+				Field1: "renato@gmail.com",
+				Field2: "Renato Mondragón",
+			},
+			{
+				Field1: "mya@gmail.com",
+				Field2: "Mya García",
+			},
+		},
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 0 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
+
+func TestArrayErrors(t *testing.T) {
+	type SubRequest struct {
+		Field1 string `validate:"notblank,email"`
+		Field2 string `validate:"notblank,max=20"`
+
+	}
+
+	type Request struct {
+		Array []SubRequest  `validate:"isarray"`
+	}
+
+	input := Request{
+		Array: []SubRequest{
+			{
+				Field1: "renzo@gmail",
+				Field2: "Renzo Mondragón Arango",
+			},
+			{
+				Field1: "renatogmail.com",
+				Field2: "Renato Mondragón",
+			},
+			{
+				Field1: "@gmail.com",
+				Field2: "",
+			},
+		},
+	}
+
+	errors, err := Validate(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+
+	if len(errors) != 5 {
+		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+	}
+}
