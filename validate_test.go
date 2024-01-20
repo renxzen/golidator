@@ -8,6 +8,20 @@ import (
 	"github.com/renxzen/golidator/cmd/validator"
 )
 
+var LogErrors = false
+
+func LogErrorsJson(t *testing.T, errors []ValidationError) {
+	if !LogErrors {
+		return
+	}
+
+	b, err := json.MarshalIndent(errors, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(b))
+}
+
 func TestNotBlank(t *testing.T) {
 	type Request struct {
 		Field1 string  `validate:"notblank"`
@@ -45,11 +59,7 @@ func TestNotBlank(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			b, err := json.MarshalIndent(errors, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Log(string(b))
+			LogErrorsJson(t, errors)
 
 			if len(errors) != tt.output {
 				t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -64,12 +74,19 @@ func TestEmail(t *testing.T) {
 		Field2 *string `validate:"email"`
 	}
 
+	type BadRequest struct {
+		Field1 int      `validate:"email"`
+		Field2 *float64 `validate:"email"`
+	}
+
 	emailOk := "renxzen@gmail.com"
 	emailNotOk := "renxzen@g.n"
+	invalidType := 420.0
 	testTable := []struct {
-		name   string
-		input  Request
-		output int
+		name     string
+		input    Request
+		badInput BadRequest
+		output   int
 	}{
 		{
 			name: "Ok",
@@ -87,27 +104,44 @@ func TestEmail(t *testing.T) {
 			},
 			output: 2,
 		},
+		{
+			name: "InvalidType",
+			badInput: BadRequest{
+				Field1: 69.0,
+				Field2: &invalidType,
+			},
+			output: 2,
+		},
 	}
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			errors, err := Validate(tt.input)
+			var errors []ValidationError
+			var err error
+			if tt.badInput.Field1 != 0 {
+				errors, err = Validate(tt.badInput)
+			} else {
+				errors, err = Validate(tt.input)
+			}
+
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			b, err := json.MarshalIndent(errors, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Log(string(b))
+			LogErrorsJson(t, errors)
 
 			if len(errors) != tt.output {
 				t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
 			}
 
 			// has errors
-			message := validator.EMAIL_ERROR
+			message := ""
+			if tt.badInput.Field1 != 0 {
+				message = validator.NOTSTRING_ERROR
+			} else {
+				message = validator.EMAIL_ERROR
+			}
+
 			for _, error := range errors {
 				for _, error := range error.Errors {
 					if error != message {
@@ -116,43 +150,6 @@ func TestEmail(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestEmailInvalidTypeError(t *testing.T) {
-	type Request struct {
-		Field1 int      `validate:"email"`
-		Field2 *float64 `validate:"email"`
-	}
-
-	field2 := 420.0
-	input := Request{
-		Field1: 69.0,
-		Field2: &field2,
-	}
-
-	errors, err := Validate(input)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
-
-	if len(errors) != 2 {
-		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
-	}
-
-	message := validator.NOTSTRING_ERROR
-	for _, validationError := range errors {
-		for _, error := range validationError.Errors {
-			if error != message {
-				t.Errorf("Expected: %v. Result: %v", message, error)
-			}
-		}
 	}
 }
 
@@ -173,11 +170,7 @@ func TestUrlOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -201,11 +194,7 @@ func TestUrlInvalidValueError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 2 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
@@ -238,11 +227,7 @@ func TestUrlInvalidTypeError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 2 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
@@ -275,11 +260,7 @@ func TestMinIntOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -303,11 +284,7 @@ func TestMinFloatOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -331,11 +308,7 @@ func TestMinStringOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -369,11 +342,7 @@ func TestMinError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 6 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
@@ -407,11 +376,7 @@ func TestMinInvalidTypeError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 2 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
@@ -444,11 +409,7 @@ func TestMaxIntOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -472,11 +433,7 @@ func TestMaxFloatOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -500,11 +457,7 @@ func TestMaxStringOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -538,11 +491,7 @@ func TestMaxError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 6 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
@@ -576,11 +525,7 @@ func TestMaxInvalidTypeError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 2 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
@@ -616,11 +561,7 @@ func TestNotemptyOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -646,11 +587,7 @@ func TestNotemptyError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 3 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 3, len(errors))
@@ -683,11 +620,7 @@ func TestNotemptyInvalidTypeError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 2 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
@@ -735,11 +668,7 @@ func TestArrayOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 0 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
@@ -778,11 +707,7 @@ func TestArrayErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
+	LogErrorsJson(t, errors)
 
 	if len(errors) != 5 {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
