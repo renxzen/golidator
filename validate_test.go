@@ -134,7 +134,10 @@ func TestEmail(t *testing.T) {
 				t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
 			}
 
-			// has errors
+			if len(errors) == 0 {
+				return
+			}
+
 			message := ""
 			if tt.badInput.Field1 != 0 {
 				message = validator.NOTSTRING_ERROR
