@@ -8,133 +8,114 @@ import (
 	"github.com/renxzen/golidator/cmd/validator"
 )
 
-func TestNotBlankOk(t *testing.T) {
+func TestNotBlank(t *testing.T) {
 	type Request struct {
 		Field1 string  `validate:"notblank"`
 		Field2 *string `validate:"notblank"`
 	}
 
-	field2 := "testing"
-	input := Request{
-		Field1: "testing",
-		Field2: &field2,
+	blankField := ""
+	notBlankField := "testing"
+	testTable := []struct {
+		name   string
+		input  Request
+		output int
+	}{
+		{
+			name: "Ok",
+			input: Request{
+				Field1: "testing",
+				Field2: &notBlankField,
+			},
+			output: 0,
+		},
+		{
+			name: "NotOk",
+			input: Request{
+				Field1: "",
+				Field2: &blankField,
+			},
+			output: 2,
+		},
 	}
 
-	errors, err := Validate(input)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
-
-	if len(errors) != 0 {
-		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
-	}
-}
-
-func TestNotBlankWithErrors(t *testing.T) {
-	type Request struct {
-		Field1 string  `validate:"notblank"`
-		Field2 *string `validate:"notblank"`
-	}
-
-	field2 := ""
-	input := Request{
-		Field1: "",
-		Field2: &field2,
-	}
-
-	errors, err := Validate(input)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
-
-	if len(errors) != 2 {
-		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
-	}
-
-	message := validator.NOTBLANK_ERROR
-	for _, validationError := range errors {
-		for _, error := range validationError.Errors {
-			if error != message {
-				t.Errorf("Expected: %v. Result: %v", message, error)
+	for _, tt := range testTable {
+		t.Run(tt.name, func(t *testing.T) {
+			errors, err := Validate(tt.input)
+			if err != nil {
+				t.Fatal(err)
 			}
-		}
+			b, err := json.MarshalIndent(errors, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log(string(b))
+
+			if len(errors) != tt.output {
+				t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+			}
+		})
 	}
 }
 
-func TestEmailOk(t *testing.T) {
+func TestEmail(t *testing.T) {
 	type Request struct {
 		Field1 string  `validate:"email"`
 		Field2 *string `validate:"email"`
 	}
 
-	field2 := "renxzen@gmail.com"
-	input := Request{
-		Field1: "renxzen@gmail.com",
-		Field2: &field2,
+	emailOk := "renxzen@gmail.com"
+	emailNotOk := "renxzen@g.n"
+	testTable := []struct {
+		name   string
+		input  Request
+		output int
+	}{
+		{
+			name: "Ok",
+			input: Request{
+				Field1: "renxzen@gmail.com",
+				Field2: &emailOk,
+			},
+			output: 0,
+		},
+		{
+			name: "NotOk",
+			input: Request{
+				Field1: "renxzen@gmail",
+				Field2: &emailNotOk,
+			},
+			output: 2,
+		},
 	}
 
-	errors, err := Validate(input)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
-
-	if len(errors) != 0 {
-		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
-	}
-}
-
-func TestEmailInvalidValueError(t *testing.T) {
-	type Request struct {
-		Field1 string  `validate:"email"`
-		Field2 *string `validate:"email"`
-	}
-
-	field2 := "renxzen@g.n"
-	input := Request{
-		Field1: "renxzen@gmail",
-		Field2: &field2,
-	}
-
-	errors, err := Validate(input)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b, err := json.MarshalIndent(errors, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(b))
-
-	if len(errors) != 2 {
-		t.Errorf("\nExpected: %v.\nResult: %v.", 2, len(errors))
-	}
-
-	message := validator.EMAIL_ERROR
-	for _, validationError := range errors {
-		for _, error := range validationError.Errors {
-			if error != message {
-				t.Errorf("Expected: %v. Result: %v", message, error)
+	for _, tt := range testTable {
+		t.Run(tt.name, func(t *testing.T) {
+			errors, err := Validate(tt.input)
+			if err != nil {
+				t.Fatal(err)
 			}
-		}
+
+			b, err := json.MarshalIndent(errors, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log(string(b))
+
+			if len(errors) != tt.output {
+				t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+			}
+
+			// has errors
+			message := validator.EMAIL_ERROR
+			for _, error := range errors {
+				for _, error := range error.Errors {
+					if error != message {
+						t.Errorf("Expected: %v. Result: %v", message, error)
+					}
+				}
+			}
+		})
 	}
 }
 
@@ -411,7 +392,7 @@ func TestMinError(t *testing.T) {
 
 func TestMinInvalidTypeError(t *testing.T) {
 	type Request struct {
-		Field1 bool `validate:"min"`
+		Field1 bool  `validate:"min"`
 		Field2 *bool `validate:"min"`
 	}
 
@@ -580,7 +561,7 @@ func TestMaxError(t *testing.T) {
 
 func TestMaxInvalidTypeError(t *testing.T) {
 	type Request struct {
-		Field1 bool `validate:"max"`
+		Field1 bool  `validate:"max"`
 		Field2 *bool `validate:"max"`
 	}
 
@@ -681,7 +662,8 @@ func TestNotemptyError(t *testing.T) {
 			if error != message {
 				t.Errorf("Expected: %v. Result: %v", message, error)
 			}
-		} }
+		}
+	}
 }
 
 func TestNotemptyInvalidTypeError(t *testing.T) {
@@ -725,11 +707,10 @@ func TestArrayOk(t *testing.T) {
 	type SubRequest struct {
 		Field1 string `validate:"notblank,email"`
 		Field2 string `validate:"notblank,max=20"`
-
 	}
 
 	type Request struct {
-		Array []SubRequest  `validate:"isarray"`
+		Array []SubRequest `validate:"isarray"`
 	}
 
 	input := Request{
@@ -769,11 +750,10 @@ func TestArrayErrors(t *testing.T) {
 	type SubRequest struct {
 		Field1 string `validate:"notblank,email"`
 		Field2 string `validate:"notblank,max=20"`
-
 	}
 
 	type Request struct {
-		Array []SubRequest  `validate:"isarray"`
+		Array []SubRequest `validate:"isarray"`
 	}
 
 	input := Request{
