@@ -489,14 +489,12 @@ func TestMax(t *testing.T) {
 			re := regexp.MustCompile(pattern)
 			for _, validationError := range errors {
 				for _, error := range validationError.Errors {
-					if isInvalidTest {
-						if error != invalidTypeMessage {
-							t.Errorf("Expected: %v. Result: %v", invalidTypeMessage, error)
-						}
-					} else {
-						if !re.MatchString(error) {
-							t.Errorf("Expected to match: %v. Result: %v", pattern, error)
-						}
+					if isInvalidTest && error != invalidTypeMessage {
+						t.Errorf("Expected: %v. Result: %v", invalidTypeMessage, error)
+					}
+
+					if !isInvalidTest && !re.MatchString(error) {
+						t.Errorf("Expected to match: %v. Result: %v", pattern, error)
 					}
 				}
 			}
