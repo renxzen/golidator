@@ -1,8 +1,8 @@
 package golidator
 
 import (
-	"github.com/renxzen/golidator/internal/util"
 	"github.com/renxzen/golidator/cmd/validator"
+	"github.com/renxzen/golidator/internal/util"
 )
 
 type ValidationError struct {
@@ -25,4 +25,3 @@ func Validate(i any) ([]ValidationError, error) {
 
 	return errors, err
 }
-

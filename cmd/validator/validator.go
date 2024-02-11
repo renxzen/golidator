@@ -29,7 +29,6 @@ type Validator interface {
 	GetErrors() (map[string][]string, error)
 }
 
-
 // constructor
 
 func NewValidate(model any) Validator {
