@@ -16,6 +16,10 @@ func (v *validator) Required() {
 }
 
 func (v *validator) Notblank() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		return
+	}
+
 	if v.typeFieldTypeName != "string" {
 		v.setError(NOTSTRING_ERROR)
 		return
@@ -28,6 +32,10 @@ func (v *validator) Notblank() {
 }
 
 func (v *validator) Email() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		return
+	}
+
 	if v.typeFieldTypeName != "string" {
 		v.setError(NOTSTRING_ERROR)
 		return
@@ -41,6 +49,10 @@ func (v *validator) Email() {
 }
 
 func (v *validator) Url() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		return
+	}
+
 	if v.typeFieldTypeName != "string" {
 		v.setError(NOTSTRING_ERROR)
 		return
@@ -54,6 +66,10 @@ func (v *validator) Url() {
 }
 
 func (v *validator) Min() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		return
+	}
+
 	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) < v.fieldLength {
 			v.setError(fmt.Sprintf(MIN_STRING_ERROR, v.fieldLength))
@@ -79,6 +95,10 @@ func (v *validator) Min() {
 }
 
 func (v *validator) Max() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		return
+	}
+
 	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) > v.fieldLength {
 			v.setError(fmt.Sprintf(MAX_STRING_ERROR, v.fieldLength))
@@ -118,12 +138,8 @@ func (v *validator) Notempty() {
 }
 
 func (v *validator) Isarray() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		if v.fieldValue.IsNil() {
-			return
-		}
-
-		v.fieldValue = v.fieldValue.Elem()
+	if v.fieldValue.Kind() == reflect.Ptr && v.fieldValue.IsNil() {
+		return
 	}
 
 	if v.fieldValueType.Kind() != reflect.Slice {
@@ -139,7 +155,12 @@ func (v *validator) Isarray() {
 		}
 
 		for subField, arr := range mapErrors {
-			subFieldName := fmt.Sprintf("%v[%v]: %v", v.typeFieldName, i, util.ToSnakeCase(subField))
+			subFieldName := fmt.Sprintf(
+				"%v[%v]: %v",
+				v.typeFieldName,
+				i,
+				util.ToSnakeCase(subField),
+			)
 			v.errors[subFieldName] = arr
 		}
 	}
