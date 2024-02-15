@@ -10,7 +10,7 @@ import (
 )
 
 func (v *validator) Required() {
-	if v.fieldValue.IsNil() {
+	if v.fieldValue.Kind() == reflect.Ptr && v.fieldValue.IsNil() {
 		v.setError(REQUIRED_ERROR)
 	}
 }
