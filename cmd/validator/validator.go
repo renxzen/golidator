@@ -52,6 +52,8 @@ func (v *validator) setError(message string) {
 // public methods
 
 func (v *validator) GetErrors() (map[string][]string, error) {
+	reflection := reflect.ValueOf(v)
+
 	for i := 0; i < v.value.NumField(); i++ {
 		// set field data
 		v.fieldValue = v.value.Field(i)
@@ -61,13 +63,12 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 		v.typeFieldName = v.typeField.Name
 		v.typeFieldTypeName = v.typeField.Type.Name()
 
-		if (v.fieldValue.Kind() == reflect.Ptr) && !v.fieldValue.IsNil() {
+		if v.fieldValue.Kind() == reflect.Ptr && !v.fieldValue.IsNil() {
 			v.fieldValue = v.fieldValue.Elem()
 			v.fieldValueType = v.fieldValue.Type()
 			v.typeFieldTypeName = v.fieldValueType.Name()
 		}
 
-		// get validators from tag
 		validateTag := v.typeField.Tag.Get(TagName)
 		validators := strings.Split(validateTag, ",")
 
@@ -87,8 +88,8 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 				v.fieldLength = limit
 			}
 
-			value := reflect.ValueOf(v)
-			method := value.MethodByName(util.Capitalize(args[0]))
+			// TODO: replace with a switch statement
+			method := reflection.MethodByName(util.Capitalize(args[0]))
 			if !method.IsValid() {
 				message := fmt.Sprintf(`Validator "%s" not found.`, args[0])
 				return v.errors, errors.New(message)
