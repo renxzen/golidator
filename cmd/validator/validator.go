@@ -73,6 +73,10 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 		validators := strings.Split(validateTag, ",")
 
 		for _, validator := range validators {
+			if validator == "" {
+				continue
+			}
+
 			args := strings.Split(validator, "=")
 
 			if len(args) > 1 {
