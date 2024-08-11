@@ -2,7 +2,6 @@ package golidator
 
 import (
 	"github.com/renxzen/golidator/cmd/validator"
-	"github.com/renxzen/golidator/internal/util"
 )
 
 type ValidationError struct {
@@ -16,7 +15,7 @@ func Validate(i any) ([]ValidationError, error) {
 	errors := make([]ValidationError, 0)
 	for field, arr := range mapErrors {
 		err := ValidationError{
-			Field:  util.ToSnakeCase(field),
+			Field:  field,
 			Errors: arr,
 		}
 

@@ -5,8 +5,6 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
-
-	"github.com/renxzen/golidator/internal/util"
 )
 
 func (v *validator) Required() {
@@ -159,7 +157,7 @@ func (v *validator) Isarray() {
 				"%v[%v]: %v",
 				v.typeFieldName,
 				i,
-				util.ToSnakeCase(subField),
+				subField,
 			)
 			v.errors[subFieldName] = arr
 		}
