@@ -70,7 +70,7 @@ func (v *validator) setFieldData(i int) {
 
 	// get json name
 	jsonTag := strings.Split(v.typeField.Tag.Get(JsonTag), ",")
-	if len(jsonTag) > 0 {
+	if len(jsonTag) > 0 && jsonTag[0] != "" {
 		v.typeFieldName = jsonTag[0]
 	} else {
 		// get field name
