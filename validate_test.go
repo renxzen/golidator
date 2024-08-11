@@ -672,3 +672,52 @@ func TestArrayErrors(t *testing.T) {
 		t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
 	}
 }
+
+func TestFieldName(t *testing.T) {
+	type Request struct {
+		Field1 string  `json:"field_1" validate:"notblank"`
+		Field2 *string `json:"field_2" validate:"notblank"`
+		Field3 string  `               validate:"notblank"`
+		Field4 *string `               validate:"notblank"`
+	}
+
+	blankField := ""
+	testTable := []struct {
+		name   string
+		input  Request
+		output []string
+	}{
+		{
+			name: "Ok",
+			input: Request{
+				Field1: "",
+				Field2: &blankField,
+				Field3: "",
+				Field4: &blankField,
+			},
+			output: []string{"field_1", "field_2", "Field3", "Field4"},
+		},
+	}
+
+	for _, tt := range testTable {
+		t.Run(tt.name, func(t *testing.T) {
+			errors, err := Validate(tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			LogErrorsJson(t, errors)
+
+			count := 0
+			for _, fieldName := range tt.output {
+				for _, err := range errors {
+					if err.Field == fieldName {
+						count++
+					}
+				}
+			}
+			if len(tt.output) != count {
+				t.Errorf("\nExpected: %v.\nResult: %v.", len(tt.output), count)
+			}
+		})
+	}
+}
