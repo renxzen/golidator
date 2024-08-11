@@ -10,7 +10,10 @@ import (
 	"github.com/renxzen/golidator/internal/util"
 )
 
-const TagName = "validate"
+const (
+	TagName = "validate"
+	JsonTag = "json"
+)
 
 type validator struct {
 	value  reflect.Value
@@ -49,26 +52,39 @@ func (v *validator) setError(message string) {
 	v.errors[v.typeFieldName] = append(v.errors[v.typeFieldName], message)
 }
 
+func (v *validator) setFieldData(i int) {
+	// get field value
+	v.fieldValue = v.value.Field(i)
+	v.fieldValueType = v.fieldValue.Type()
+
+	// get field type
+	v.typeField = v.value.Type().Field(i)
+	v.typeFieldTypeName = v.typeField.Type.Name()
+
+	// check if field is a pointer
+	if v.fieldValue.Kind() == reflect.Ptr && !v.fieldValue.IsNil() {
+		v.fieldValue = v.fieldValue.Elem()
+		v.fieldValueType = v.fieldValue.Type()
+		v.typeFieldTypeName = v.fieldValueType.Name()
+	}
+
+	// get json name
+	jsonTag := strings.Split(v.typeField.Tag.Get(JsonTag), ",")
+	if len(jsonTag) > 1 {
+		v.typeFieldName = jsonTag[0]
+	} else {
+		// get field name
+		v.typeFieldName = v.typeField.Name
+	}
+}
+
 // public methods
 
 func (v *validator) GetErrors() (map[string][]string, error) {
 	reflection := reflect.ValueOf(v)
 
 	for i := 0; i < v.value.NumField(); i++ {
-		// set field data
-		v.fieldValue = v.value.Field(i)
-		v.fieldValueType = v.fieldValue.Type()
-
-		v.typeField = v.value.Type().Field(i)
-		v.typeFieldName = v.typeField.Name
-		v.typeFieldTypeName = v.typeField.Type.Name()
-
-		if v.fieldValue.Kind() == reflect.Ptr && !v.fieldValue.IsNil() {
-			v.fieldValue = v.fieldValue.Elem()
-			v.fieldValueType = v.fieldValue.Type()
-			v.typeFieldTypeName = v.fieldValueType.Name()
-		}
-
+		v.setFieldData(i)
 		validateTag := v.typeField.Tag.Get(TagName)
 		validators := strings.Split(validateTag, ",")
 
