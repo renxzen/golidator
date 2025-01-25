@@ -56,11 +56,13 @@ if len(validationErrors) > 0 {
 
 - `notblank`: Ensures that a string is not empty.
 - `email`: Validates that a string is a valid email address.
+- `numeric`: Validates that a string contains only numbers.
 - `url`: Validates that a string is a valid URL.
 - `required`: Ensures that a field is not missing from the body.
 - `notempty`: Ensures that an array is not empty.
 - `min`: Validates that a string or numeric value is greater than or equal to a specified limit.
 - `max`: Validates that a string or numeric value is less than or equal to a specified limit.
+- `len`: Validates that a string or a slice value has the same amount of characters or elements.
 - `isarray`: Ensures that a field is a non-nil array and validates its elements recursively.
 
 ## Todo
