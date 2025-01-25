@@ -7,6 +7,11 @@ import (
 	"regexp"
 )
 
+var (
+	emailRegex     = regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
+	numericalRegex = regexp.MustCompile(`^[0-9]+$`)
+)
+
 func (v *validator) Required() {
 	if v.fieldValue.Kind() == reflect.Ptr && v.fieldValue.IsNil() {
 		v.setError(REQUIRED_ERROR)
@@ -39,7 +44,6 @@ func (v *validator) Email() {
 		return
 	}
 
-	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if !emailRegex.MatchString(v.fieldValue.String()) {
 		v.setError(EMAIL_ERROR)
 		return
@@ -77,19 +81,19 @@ func (v *validator) Min() {
 
 	if v.fieldValue.CanInt() {
 		if v.fieldValue.Int() < int64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MIN_NUMERIC_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(MIN_INTEGER_ERROR, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanFloat() {
 		if v.fieldValue.Float() < float64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MIN_NUMERIC_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(MIN_INTEGER_ERROR, v.fieldLength))
 		}
 		return
 	}
 
-	v.setError(NOTSTRINGORNUMERIC_ERROR)
+	v.setError(NOTSTRINGORINTEGER_ERROR)
 }
 
 func (v *validator) Max() {
@@ -106,19 +110,19 @@ func (v *validator) Max() {
 
 	if v.fieldValue.CanInt() {
 		if v.fieldValue.Int() > int64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MAX_NUMERIC_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(MAX_INTEGER_ERROR, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanFloat() {
 		if v.fieldValue.Float() > float64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MAX_NUMERIC_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(MAX_INTEGER_ERROR, v.fieldLength))
 		}
 		return
 	}
 
-	v.setError(NOTSTRINGORNUMERIC_ERROR)
+	v.setError(NOTSTRINGORINTEGER_ERROR)
 	return
 }
 
@@ -161,5 +165,42 @@ func (v *validator) Isarray() {
 			)
 			v.errors[subFieldName] = arr
 		}
+	}
+}
+
+func (v *validator) Len() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		return
+	}
+
+	if v.typeFieldTypeName != "string" && v.fieldValueType.Kind() != reflect.Slice {
+		v.setError(NOTSTRINGORSLICE_ERROR)
+		return
+	}
+
+	if v.typeFieldTypeName == "string" && len(v.fieldValue.String()) != v.fieldLength {
+		v.setError(fmt.Sprintf(LEN_STRING_ERROR, v.fieldLength))
+		return
+	}
+
+	if v.fieldValueType.Kind() == reflect.Slice && v.fieldValue.Len() != v.fieldLength {
+		v.setError(fmt.Sprintf(LEN_SLICE_ERROR, v.fieldLength))
+		return
+	}
+}
+
+func (v *validator) Numeric() {
+	if v.fieldValue.Kind() == reflect.Ptr {
+		return
+	}
+
+	if v.typeFieldTypeName != "string" {
+		v.setError(NOTSTRING_ERROR)
+		return
+	}
+
+	if !numericalRegex.MatchString(v.fieldValue.String()) {
+		v.setError(NUMERIC_ERROR)
+		return
 	}
 }

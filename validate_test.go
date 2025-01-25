@@ -1,16 +1,18 @@
-package golidator
+package golidator_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"testing"
 
+	"github.com/renxzen/golidator"
 	"github.com/renxzen/golidator/cmd/validator"
 )
 
 var LogErrors = false
 
-func LogErrorsJson(t *testing.T, errors []ValidationError) {
+func LogErrorsJson(t *testing.T, errors []golidator.ValidationError) {
 	if !LogErrors {
 		return
 	}
@@ -55,7 +57,7 @@ func TestNotBlank(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			errors, err := Validate(tt.input)
+			errors, err := golidator.Validate(tt.input)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -116,12 +118,12 @@ func TestEmail(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			var errors []ValidationError
+			var errors []golidator.ValidationError
 			var err error
 			if tt.badInput.Field1 != 0 {
-				errors, err = Validate(tt.badInput)
+				errors, err = golidator.Validate(tt.badInput)
 			} else {
-				errors, err = Validate(tt.input)
+				errors, err = golidator.Validate(tt.input)
 			}
 
 			if err != nil {
@@ -204,12 +206,12 @@ func TestUrl(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			var errors []ValidationError
+			var errors []golidator.ValidationError
 			var err error
 			if tt.badInput.Field1 != 0 {
-				errors, err = Validate(tt.badInput)
+				errors, err = golidator.Validate(tt.badInput)
 			} else {
-				errors, err = Validate(tt.input)
+				errors, err = golidator.Validate(tt.input)
 			}
 
 			if err != nil {
@@ -326,18 +328,18 @@ func TestMin(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			var errors []ValidationError
+			var errors []golidator.ValidationError
 			var err error
 			isInvalidTest := false
 
 			if tt.intInput.Field1 != 0 {
-				errors, err = Validate(tt.intInput)
+				errors, err = golidator.Validate(tt.intInput)
 			} else if tt.floatInput.Field1 != 0 {
-				errors, err = Validate(tt.floatInput)
+				errors, err = golidator.Validate(tt.floatInput)
 			} else if tt.stringInput.Field1 != "" {
-				errors, err = Validate(tt.stringInput)
+				errors, err = golidator.Validate(tt.stringInput)
 			} else {
-				errors, err = Validate(tt.invalidInput)
+				errors, err = golidator.Validate(tt.invalidInput)
 				isInvalidTest = true
 			}
 
@@ -355,7 +357,7 @@ func TestMin(t *testing.T) {
 				return
 			}
 
-			invalidTypeMessage := validator.NOTSTRINGORNUMERIC_ERROR
+			invalidTypeMessage := validator.NOTSTRINGORINTEGER_ERROR
 			pattern := `^Must (have|be) more or equal than`
 			re := regexp.MustCompile(pattern)
 			for _, validationError := range errors {
@@ -455,18 +457,18 @@ func TestMax(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			var errors []ValidationError
+			var errors []golidator.ValidationError
 			var err error
 			isInvalidTest := false
 
 			if tt.intInput.Field1 != 0 {
-				errors, err = Validate(tt.intInput)
+				errors, err = golidator.Validate(tt.intInput)
 			} else if tt.floatInput.Field1 != 0 {
-				errors, err = Validate(tt.floatInput)
+				errors, err = golidator.Validate(tt.floatInput)
 			} else if tt.stringInput.Field1 != "" {
-				errors, err = Validate(tt.stringInput)
+				errors, err = golidator.Validate(tt.stringInput)
 			} else {
-				errors, err = Validate(tt.invalidInput)
+				errors, err = golidator.Validate(tt.invalidInput)
 				isInvalidTest = true
 			}
 
@@ -484,7 +486,7 @@ func TestMax(t *testing.T) {
 				return
 			}
 
-			invalidTypeMessage := validator.NOTSTRINGORNUMERIC_ERROR
+			invalidTypeMessage := validator.NOTSTRINGORINTEGER_ERROR
 			pattern := `^Must (have|be) less or equal than`
 			re := regexp.MustCompile(pattern)
 			for _, validationError := range errors {
@@ -554,13 +556,13 @@ func TestNotempty(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			var errors []ValidationError
+			var errors []golidator.ValidationError
 			var err error
 
 			if tt.input.Field1 != nil {
-				errors, err = Validate(tt.input)
+				errors, err = golidator.Validate(tt.input)
 			} else {
-				errors, err = Validate(tt.badInput)
+				errors, err = golidator.Validate(tt.badInput)
 			}
 
 			if err != nil {
@@ -622,7 +624,7 @@ func TestArrayOk(t *testing.T) {
 		},
 	}
 
-	errors, err := Validate(input)
+	errors, err := golidator.Validate(input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -661,7 +663,7 @@ func TestArrayErrors(t *testing.T) {
 		},
 	}
 
-	errors, err := Validate(input)
+	errors, err := golidator.Validate(input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -701,7 +703,7 @@ func TestFieldName(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			errors, err := Validate(tt.input)
+			errors, err := golidator.Validate(tt.input)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -717,6 +719,202 @@ func TestFieldName(t *testing.T) {
 			}
 			if len(tt.output) != count {
 				t.Errorf("\nExpected: %v.\nResult: %v.", len(tt.output), count)
+			}
+		})
+	}
+}
+
+func TestNumeric(t *testing.T) {
+	type Request struct {
+		Field1 string  `validate:"numeric"`
+		Field2 *string `validate:"numeric"`
+	}
+
+	type BadRequest struct {
+		Field1 int      `validate:"numeric"`
+		Field2 *float64 `validate:"numeric"`
+	}
+
+	numericOK := "12345"
+	numericNotOK := "12345ABCDE"
+	invalidType := 420.0
+	testTable := []struct {
+		name     string
+		input    Request
+		badInput BadRequest
+		output   int
+	}{
+		{
+			name: "Ok",
+			input: Request{
+				Field1: numericOK,
+				Field2: &numericOK,
+			},
+			output: 0,
+		},
+		{
+			name: "NotOk",
+			input: Request{
+				Field1: numericNotOK,
+				Field2: &numericNotOK,
+			},
+			output: 2,
+		},
+		{
+			name: "InvalidType",
+			badInput: BadRequest{
+				Field1: 69.0,
+				Field2: &invalidType,
+			},
+			output: 2,
+		},
+	}
+
+	for _, tt := range testTable {
+		t.Run(tt.name, func(t *testing.T) {
+			var errors []golidator.ValidationError
+			var err error
+			if tt.badInput.Field1 != 0 {
+				errors, err = golidator.Validate(tt.badInput)
+			} else {
+				errors, err = golidator.Validate(tt.input)
+			}
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			LogErrorsJson(t, errors)
+
+			if len(errors) != tt.output {
+				t.Errorf("\nExpected: %v.\nResult: %v.", 0, len(errors))
+			}
+
+			if len(errors) == 0 {
+				return
+			}
+
+			message := ""
+			if tt.badInput.Field1 != 0 {
+				message = validator.NOTSTRING_ERROR
+			} else {
+				message = validator.NUMERIC_ERROR
+			}
+
+			for _, error := range errors {
+				for _, error := range error.Errors {
+					if error != message {
+						t.Errorf("Expected: %v. Result: %v", message, error)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestLen(t *testing.T) {
+	type Request[T string | []string] struct {
+		Field1 T  `validate:"len=5"`
+		Field2 *T `validate:"len=5"`
+	}
+
+	type BadRequest struct {
+		Field1 int      `validate:"len=5"`
+		Field2 *float64 `validate:"len=5"`
+	}
+
+	stringOK := "abcde"
+	stringNotOK := "abcd"
+	sliceOK := []string{"a", "b", "c", "d", "e"}
+	sliceNotOK := []string{"a", "b", "c", "d"}
+	testTable := []struct {
+		name        string
+		stringInput Request[string]
+		sliceInput  Request[[]string]
+		badInput    BadRequest
+		output      int
+	}{
+		{
+			name: "StringOK",
+			stringInput: Request[string]{
+				Field1: stringOK,
+				Field2: &stringOK,
+			},
+			output: 0,
+		},
+		{
+			name: "StringNotOk",
+			stringInput: Request[string]{
+				Field1: stringNotOK,
+				Field2: &stringNotOK,
+			},
+			output: 2,
+		},
+		{
+			name: "SliceOK",
+			sliceInput: Request[[]string]{
+				Field1: sliceOK,
+				Field2: &sliceOK,
+			},
+			output: 0,
+		},
+		{
+			name: "SliceNotOk",
+			sliceInput: Request[[]string]{
+				Field1: sliceNotOK,
+				Field2: &sliceNotOK,
+			},
+			output: 2,
+		},
+		{
+			name: "InvalidType",
+			badInput: BadRequest{
+				Field1: 69,
+				Field2: new(float64),
+			},
+			output: 2,
+		},
+	}
+
+	for _, tt := range testTable {
+		t.Run(tt.name, func(t *testing.T) {
+			var errors []golidator.ValidationError
+			var err error
+
+			if tt.stringInput.Field1 != "" {
+				errors, err = golidator.Validate(tt.stringInput)
+			} else if tt.sliceInput.Field1 != nil {
+				errors, err = golidator.Validate(tt.sliceInput)
+			} else if tt.badInput.Field1 != 0 {
+				errors, err = golidator.Validate(tt.badInput)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			LogErrorsJson(t, errors)
+
+			if len(errors) != tt.output {
+				t.Errorf("\nExpected: %v.\nResult: %v.", tt.output, len(errors))
+			}
+
+			if len(errors) == 0 {
+				return
+			}
+
+			message := fmt.Sprintf(validator.LEN_STRING_ERROR, 5)
+			if tt.sliceInput.Field1 != nil {
+				message = fmt.Sprintf(validator.LEN_SLICE_ERROR, 5)
+			} else if tt.badInput.Field1 != 0 {
+				message = validator.NOTSTRINGORSLICE_ERROR
+			}
+
+			for _, validationError := range errors {
+				for _, error := range validationError.Errors {
+					if error != message {
+						t.Errorf("Expected: %v. Result: %v", message, error)
+					}
+				}
 			}
 		})
 	}
