@@ -12,140 +12,139 @@ var (
 	numericalRegex = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func (v *validator) Required() {
+func (v *Validator) Required() {
 	if v.fieldValue.Kind() == reflect.Ptr && v.fieldValue.IsNil() {
-		v.setError(REQUIRED_ERROR)
+		v.setError(ErrMsgMissing)
 	}
 }
 
-func (v *validator) Notblank() {
+func (v *Validator) NotBlank() {
 	if v.fieldValue.Kind() == reflect.Ptr {
 		return
 	}
 
 	if v.typeFieldTypeName != "string" {
-		v.setError(NOTSTRING_ERROR)
+		v.setError(ErrMsgNotStringType)
 		return
 	}
 
 	if v.fieldValue.String() == "" {
-		v.setError(NOTBLANK_ERROR)
+		v.setError(ErrMsgNotBlank)
 		return
 	}
 }
 
-func (v *validator) Email() {
+func (v *Validator) Email() {
 	if v.fieldValue.Kind() == reflect.Ptr {
 		return
 	}
 
 	if v.typeFieldTypeName != "string" {
-		v.setError(NOTSTRING_ERROR)
+		v.setError(ErrMsgNotStringType)
 		return
 	}
 
 	if !emailRegex.MatchString(v.fieldValue.String()) {
-		v.setError(EMAIL_ERROR)
+		v.setError(ErrMsgInvalidEmail)
 		return
 	}
 }
 
-func (v *validator) Url() {
+func (v *Validator) URL() {
 	if v.fieldValue.Kind() == reflect.Ptr {
 		return
 	}
 
 	if v.typeFieldTypeName != "string" {
-		v.setError(NOTSTRING_ERROR)
+		v.setError(ErrMsgNotStringType)
 		return
 	}
 
 	_, err := url.ParseRequestURI(v.fieldValue.String())
 	if err != nil {
-		v.setError(URL_ERROR)
+		v.setError(ErrMsgInvalidURL)
 		return
 	}
 }
 
-func (v *validator) Min() {
+func (v *Validator) Min() {
 	if v.fieldValue.Kind() == reflect.Ptr {
 		return
 	}
 
 	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) < v.fieldLength {
-			v.setError(fmt.Sprintf(MIN_STRING_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(ErrMsgStrInvalidMin, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanInt() {
 		if v.fieldValue.Int() < int64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MIN_INTEGER_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(ErrMsgStrInvalidInt, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanFloat() {
 		if v.fieldValue.Float() < float64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MIN_INTEGER_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(ErrMsgStrInvalidInt, v.fieldLength))
 		}
 		return
 	}
 
-	v.setError(NOTSTRINGORINTEGER_ERROR)
+	v.setError(ErrMsgNotStrIntType)
 }
 
-func (v *validator) Max() {
+func (v *Validator) Max() {
 	if v.fieldValue.Kind() == reflect.Ptr {
 		return
 	}
 
 	if v.typeFieldTypeName == "string" {
 		if len(v.fieldValue.String()) > v.fieldLength {
-			v.setError(fmt.Sprintf(MAX_STRING_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(ErrMsgStrInvalidMax, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanInt() {
 		if v.fieldValue.Int() > int64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MAX_INTEGER_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(ErrMsgIntInvalidMax, v.fieldLength))
 		}
 		return
 	}
 
 	if v.fieldValue.CanFloat() {
 		if v.fieldValue.Float() > float64(v.fieldLength) {
-			v.setError(fmt.Sprintf(MAX_INTEGER_ERROR, v.fieldLength))
+			v.setError(fmt.Sprintf(ErrMsgIntInvalidMax, v.fieldLength))
 		}
 		return
 	}
 
-	v.setError(NOTSTRINGORINTEGER_ERROR)
-	return
+	v.setError(ErrMsgNotStrIntType)
 }
 
-func (v *validator) Notempty() {
+func (v *Validator) NotEmpty() {
 	if v.fieldValueType.Kind() != reflect.Slice {
-		v.setError(NOTARRAY_ERROR)
+		v.setError(ErrMsgNotArrayType)
 		return
 	}
 
 	value := v.fieldValue.Len()
 	if value == 0 {
-		v.setError(NOTEMPTY_ERROR)
+		v.setError(ErrMsgEmptyArray)
 		return
 	}
 }
 
-func (v *validator) Isarray() {
+func (v *Validator) IsArray() {
 	if v.fieldValue.Kind() == reflect.Ptr && v.fieldValue.IsNil() {
 		return
 	}
 
 	if v.fieldValueType.Kind() != reflect.Slice {
-		v.setError(NOTARRAY_ERROR)
+		v.setError(ErrMsgNotArrayType)
 		return
 	}
 
@@ -168,39 +167,39 @@ func (v *validator) Isarray() {
 	}
 }
 
-func (v *validator) Len() {
+func (v *Validator) Len() {
 	if v.fieldValue.Kind() == reflect.Ptr {
 		return
 	}
 
 	if v.typeFieldTypeName != "string" && v.fieldValueType.Kind() != reflect.Slice {
-		v.setError(NOTSTRINGORSLICE_ERROR)
+		v.setError(ErrMsgNotStrSliceType)
 		return
 	}
 
 	if v.typeFieldTypeName == "string" && len(v.fieldValue.String()) != v.fieldLength {
-		v.setError(fmt.Sprintf(LEN_STRING_ERROR, v.fieldLength))
+		v.setError(fmt.Sprintf(ErrMsgInvalidLength, v.fieldLength))
 		return
 	}
 
 	if v.fieldValueType.Kind() == reflect.Slice && v.fieldValue.Len() != v.fieldLength {
-		v.setError(fmt.Sprintf(LEN_SLICE_ERROR, v.fieldLength))
+		v.setError(fmt.Sprintf(ErrMsgInvalidLengthSlice, v.fieldLength))
 		return
 	}
 }
 
-func (v *validator) Numeric() {
+func (v *Validator) Numeric() {
 	if v.fieldValue.Kind() == reflect.Ptr {
 		return
 	}
 
 	if v.typeFieldTypeName != "string" {
-		v.setError(NOTSTRING_ERROR)
+		v.setError(ErrMsgNotStringType)
 		return
 	}
 
 	if !numericalRegex.MatchString(v.fieldValue.String()) {
-		v.setError(NUMERIC_ERROR)
+		v.setError(ErrMsgNotNumeric)
 		return
 	}
 }

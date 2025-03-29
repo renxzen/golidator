@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/renxzen/golidator"
-	"github.com/renxzen/golidator/cmd/validator"
+	"github.com/renxzen/golidator/internal/validator"
 )
 
 var LogErrors = false
@@ -142,9 +142,9 @@ func TestEmail(t *testing.T) {
 
 			message := ""
 			if tt.badInput.Field1 != 0 {
-				message = validator.NOTSTRING_ERROR
+				message = validator.ErrMsgNotStringType
 			} else {
-				message = validator.EMAIL_ERROR
+				message = validator.ErrMsgInvalidEmail
 			}
 
 			for _, error := range errors {
@@ -230,9 +230,9 @@ func TestUrl(t *testing.T) {
 
 			message := ""
 			if tt.badInput.Field1 != 0 {
-				message = validator.NOTSTRING_ERROR
+				message = validator.ErrMsgNotStringType
 			} else {
-				message = validator.URL_ERROR
+				message = validator.ErrMsgInvalidURL
 			}
 
 			for _, error := range errors {
@@ -357,7 +357,7 @@ func TestMin(t *testing.T) {
 				return
 			}
 
-			invalidTypeMessage := validator.NOTSTRINGORINTEGER_ERROR
+			invalidTypeMessage := validator.ErrMsgNotStrIntType
 			pattern := `^Must (have|be) more or equal than`
 			re := regexp.MustCompile(pattern)
 			for _, validationError := range errors {
@@ -486,7 +486,7 @@ func TestMax(t *testing.T) {
 				return
 			}
 
-			invalidTypeMessage := validator.NOTSTRINGORINTEGER_ERROR
+			invalidTypeMessage := validator.ErrMsgNotStrIntType
 			pattern := `^Must (have|be) less or equal than`
 			re := regexp.MustCompile(pattern)
 			for _, validationError := range errors {
@@ -581,9 +581,9 @@ func TestNotempty(t *testing.T) {
 
 			message := ""
 			if tt.input.Field1 != nil {
-				message = validator.NOTEMPTY_ERROR
+				message = validator.ErrMsgEmptyArray
 			} else {
-				message = validator.NOTARRAY_ERROR
+				message = validator.ErrMsgNotArrayType
 			}
 
 			for _, validationError := range errors {
@@ -796,9 +796,9 @@ func TestNumeric(t *testing.T) {
 
 			message := ""
 			if tt.badInput.Field1 != 0 {
-				message = validator.NOTSTRING_ERROR
+				message = validator.ErrMsgNotStringType
 			} else {
-				message = validator.NUMERIC_ERROR
+				message = validator.ErrMsgNotNumeric
 			}
 
 			for _, error := range errors {
@@ -902,11 +902,11 @@ func TestLen(t *testing.T) {
 				return
 			}
 
-			message := fmt.Sprintf(validator.LEN_STRING_ERROR, 5)
+			message := fmt.Sprintf(validator.ErrMsgInvalidLength, 5)
 			if tt.sliceInput.Field1 != nil {
-				message = fmt.Sprintf(validator.LEN_SLICE_ERROR, 5)
+				message = fmt.Sprintf(validator.ErrMsgInvalidLengthSlice, 5)
 			} else if tt.badInput.Field1 != 0 {
-				message = validator.NOTSTRINGORSLICE_ERROR
+				message = validator.ErrMsgNotStrSliceType
 			}
 
 			for _, validationError := range errors {

@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/renxzen/golidator/internal/util"
 )
 
 const (
@@ -15,7 +13,7 @@ const (
 	JsonTag = "json"
 )
 
-type validator struct {
+type Validator struct {
 	value  reflect.Value
 	errors map[string][]string
 
@@ -28,31 +26,23 @@ type validator struct {
 	typeFieldTypeName string
 }
 
-type Validator interface {
-	GetErrors() (map[string][]string, error)
-}
-
-// constructor
-
-func NewValidate(model any) Validator {
+func NewValidate(model any) *Validator {
 	value := reflect.ValueOf(model)
 	if value.Kind() == reflect.Ptr {
 		value = value.Elem()
 	}
 
-	return &validator{
+	return &Validator{
 		value:  value,
 		errors: make(map[string][]string),
 	}
 }
 
-// private methods
-
-func (v *validator) setError(message string) {
+func (v *Validator) setError(message string) {
 	v.errors[v.typeFieldName] = append(v.errors[v.typeFieldName], message)
 }
 
-func (v *validator) setFieldData(i int) {
+func (v *Validator) setFieldData(i int) {
 	// get field value
 	v.fieldValue = v.value.Field(i)
 	v.fieldValueType = v.fieldValue.Type()
@@ -78,11 +68,7 @@ func (v *validator) setFieldData(i int) {
 	}
 }
 
-// public methods
-
-func (v *validator) GetErrors() (map[string][]string, error) {
-	reflection := reflect.ValueOf(v)
-
+func (v *Validator) GetErrors() (map[string][]string, error) {
 	for i := 0; i < v.value.NumField(); i++ {
 		v.setFieldData(i)
 		validateTag := v.typeField.Tag.Get(TagName)
@@ -94,6 +80,9 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 			}
 
 			args := strings.Split(validator, "=")
+			if len(args) == 0 {
+				continue
+			}
 
 			if len(args) > 1 {
 				limit, err := strconv.Atoi(args[1])
@@ -103,19 +92,35 @@ func (v *validator) GetErrors() (map[string][]string, error) {
 						args[1],
 						args[0],
 					)
-					return v.errors, errors.New(message)
+					return nil, errors.New(message)
 				}
 				v.fieldLength = limit
 			}
 
-			// TODO: replace with a switch statement
-			method := reflection.MethodByName(util.Capitalize(args[0]))
-			if !method.IsValid() {
-				message := fmt.Sprintf(`Validator "%s" not found.`, args[0])
-				return v.errors, errors.New(message)
+			switch args[0] {
+			case "notblank":
+				v.NotBlank()
+			case "email":
+				v.Email()
+			case "numeric":
+				v.Numeric()
+			case "url":
+				v.URL()
+			case "required":
+				v.Required()
+			case "notempty":
+				v.NotEmpty()
+			case "min":
+				v.Min()
+			case "max":
+				v.Max()
+			case "len":
+				v.Len()
+			case "isarray":
+				v.IsArray()
+			default:
+				return nil, fmt.Errorf("unknown validator: %s", args[0])
 			}
-
-			method.Call(nil)
 		}
 	}
 	return v.errors, nil
