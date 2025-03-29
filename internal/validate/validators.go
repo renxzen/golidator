@@ -1,4 +1,4 @@
-package validator
+package validate
 
 import (
 	"errors"
@@ -13,7 +13,7 @@ var (
 	numericalRegex = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func required(fieldValue reflect.Value) error {
+func Required(fieldValue reflect.Value) error {
 	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
 		return errors.New(ErrMsgMissing)
 	}
@@ -21,7 +21,7 @@ func required(fieldValue reflect.Value) error {
 	return nil
 }
 
-func notBlank(fieldValue reflect.Value, typeFieldTypeName string) error {
+func NotBlank(fieldValue reflect.Value, typeFieldTypeName string) error {
 	if fieldValue.Kind() == reflect.Ptr {
 		return nil
 	}
@@ -37,7 +37,7 @@ func notBlank(fieldValue reflect.Value, typeFieldTypeName string) error {
 	return nil
 }
 
-func email(fieldValue reflect.Value, typeFieldTypeName string) error {
+func Email(fieldValue reflect.Value, typeFieldTypeName string) error {
 	if fieldValue.Kind() == reflect.Ptr {
 		return nil
 	}
@@ -53,7 +53,7 @@ func email(fieldValue reflect.Value, typeFieldTypeName string) error {
 	return nil
 }
 
-func checkURL(fieldValue reflect.Value, typeFieldTypeName string) error {
+func URL(fieldValue reflect.Value, typeFieldTypeName string) error {
 	if fieldValue.Kind() == reflect.Ptr {
 		return nil
 	}
@@ -70,7 +70,7 @@ func checkURL(fieldValue reflect.Value, typeFieldTypeName string) error {
 	return nil
 }
 
-func checkMin(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
+func Min(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
 	if fieldValue.Kind() == reflect.Ptr {
 		return nil
 	}
@@ -100,7 +100,7 @@ func checkMin(fieldValue reflect.Value, typeFieldTypeName string, fieldLength in
 	return errors.New(ErrMsgNotStrIntType)
 }
 
-func checkMax(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
+func Max(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
 	if fieldValue.Kind() == reflect.Ptr {
 		return nil
 	}
@@ -129,7 +129,7 @@ func checkMax(fieldValue reflect.Value, typeFieldTypeName string, fieldLength in
 	return errors.New(ErrMsgNotStrIntType)
 }
 
-func notEmpty(fieldValue reflect.Value, fieldValueType reflect.Type) error {
+func NotEmpty(fieldValue reflect.Value, fieldValueType reflect.Type) error {
 	if fieldValueType.Kind() != reflect.Slice {
 		return errors.New(ErrMsgNotArrayType)
 	}
@@ -141,7 +141,7 @@ func notEmpty(fieldValue reflect.Value, fieldValueType reflect.Type) error {
 	return nil
 }
 
-func isArray(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldName string, errorsMap map[string][]string) error {
+func IsArray(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldName string) error {
 	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
 		return nil
 	}
@@ -150,27 +150,10 @@ func isArray(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldNam
 		return errors.New(ErrMsgNotArrayType)
 	}
 
-	for i := 0; i < fieldValue.Len(); i++ {
-		mapErrors, err := NewValidate(fieldValue.Index(i).Interface()).GetErrors()
-		if err != nil {
-			return err
-		}
-
-		for subField, arr := range mapErrors {
-			subFieldName := fmt.Sprintf(
-				"%v[%v]: %v",
-				typeFieldName,
-				i,
-				subField,
-			)
-			errorsMap[subFieldName] = arr
-		}
-	}
-
 	return nil
 }
 
-func checkLen(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldTypeName string, fieldLength int) error {
+func Len(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldTypeName string, fieldLength int) error {
 	if fieldValue.Kind() == reflect.Ptr {
 		return nil
 	}
@@ -190,7 +173,7 @@ func checkLen(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldTy
 	return nil
 }
 
-func numeric(fieldValue reflect.Value, typeFieldTypeName string) error {
+func Numeric(fieldValue reflect.Value, typeFieldTypeName string) error {
 	if fieldValue.Kind() == reflect.Ptr {
 		return nil
 	}

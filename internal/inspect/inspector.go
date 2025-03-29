@@ -1,4 +1,4 @@
-package validator
+package inspect
 
 import (
 	"errors"
@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/renxzen/golidator/internal/validate"
 )
 
 const (
@@ -13,24 +15,24 @@ const (
 	JsonTag = "json"
 )
 
-type Validator struct {
+type inspect struct {
 	value  reflect.Value
 	errors map[string][]string
 }
 
-func NewValidate(model any) *Validator {
+func NewInspector(model any) *inspect {
 	value := reflect.ValueOf(model)
 	if value.Kind() == reflect.Ptr {
 		value = value.Elem()
 	}
 
-	return &Validator{
+	return &inspect{
 		value:  value,
 		errors: make(map[string][]string),
 	}
 }
 
-func (v *Validator) GetErrors() (map[string][]string, error) {
+func (v *inspect) GetErrors() (map[string][]string, error) {
 	for i := 0; i < v.value.NumField(); i++ {
 		// get field value
 		fieldValue := v.value.Field(i)
@@ -86,25 +88,38 @@ func (v *Validator) GetErrors() (map[string][]string, error) {
 			var err error
 			switch args[0] {
 			case "notblank":
-				err = notBlank(fieldValue, typeFieldTypeName)
+				err = validate.NotBlank(fieldValue, typeFieldTypeName)
 			case "email":
-				err = email(fieldValue, typeFieldTypeName)
+				err = validate.Email(fieldValue, typeFieldTypeName)
 			case "numeric":
-				err = numeric(fieldValue, typeFieldTypeName)
+				err = validate.Numeric(fieldValue, typeFieldTypeName)
 			case "url":
-				err = checkURL(fieldValue, typeFieldTypeName)
+				err = validate.URL(fieldValue, typeFieldTypeName)
 			case "required":
-				err = required(fieldValue)
+				err = validate.Required(fieldValue)
 			case "notempty":
-				err = notEmpty(fieldValue, fieldValueType)
+				err = validate.NotEmpty(fieldValue, fieldValueType)
 			case "min":
-				err = checkMin(fieldValue, typeFieldTypeName, fieldLength)
+				err = validate.Min(fieldValue, typeFieldTypeName, fieldLength)
 			case "max":
-				err = checkMax(fieldValue, typeFieldTypeName, fieldLength)
+				err = validate.Max(fieldValue, typeFieldTypeName, fieldLength)
 			case "len":
-				err = checkLen(fieldValue, fieldValueType, typeFieldTypeName, fieldLength)
+				err = validate.Len(fieldValue, fieldValueType, typeFieldTypeName, fieldLength)
 			case "isarray":
-				err = isArray(fieldValue, fieldValueType, typeFieldName, v.errors)
+				err = validate.IsArray(fieldValue, fieldValueType, typeFieldName)
+
+				for i := 0; i < fieldValue.Len(); i++ {
+					result, subErr := NewInspector(fieldValue.Index(i).Interface()).GetErrors()
+					if subErr != nil {
+						v.errors[typeFieldName] = append(v.errors[typeFieldName], subErr.Error())
+						continue
+					}
+
+					for subField, arr := range result {
+						subFieldName := fmt.Sprintf("%v[%v]: %v", typeFieldName, i, subField)
+						v.errors[subFieldName] = arr
+					}
+				}
 			default:
 				return nil, fmt.Errorf("unknown validator: %s", args[0])
 			}

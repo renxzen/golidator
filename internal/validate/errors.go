@@ -1,4 +1,4 @@
-package validator
+package validate
 
 const (
 	ErrMsgNotBlank           = "Must not be blank"

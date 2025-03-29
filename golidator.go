@@ -1,7 +1,7 @@
 package golidator
 
 import (
-	"github.com/renxzen/golidator/internal/validator"
+	"github.com/renxzen/golidator/internal/inspect"
 )
 
 type ValidationError struct {
@@ -10,8 +10,8 @@ type ValidationError struct {
 }
 
 func Validate(i any) ([]ValidationError, error) {
-	validate := validator.NewValidate(i)
-	mapErrors, err := validate.GetErrors()
+	inspector := inspect.NewInspector(i)
+	mapErrors, err := inspector.GetErrors()
 	if err != nil {
 		return nil, err
 	}
