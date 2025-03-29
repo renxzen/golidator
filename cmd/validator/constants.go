@@ -3,7 +3,7 @@ package validator
 const (
 	NOTBLANK_ERROR   = "Must not be blank"
 	EMAIL_ERROR      = "Must be a valid email"
-	NUMERIC_ERROR    = "Must be a valid string only with number"
+	NUMERIC_ERROR    = "Must be a valid string with numbers only"
 	URL_ERROR        = "Must be a valid url"
 	REQUIRED_ERROR   = "Must not be missing from body"
 	NOTEMPTY_ERROR   = "Array must not be empty"
