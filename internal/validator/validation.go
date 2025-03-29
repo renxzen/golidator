@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -12,194 +13,195 @@ var (
 	numericalRegex = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func (v *Validator) Required() {
-	if v.fieldValue.Kind() == reflect.Ptr && v.fieldValue.IsNil() {
-		v.setError(ErrMsgMissing)
+func required(fieldValue reflect.Value) error {
+	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+		return errors.New(ErrMsgMissing)
 	}
+
+	return nil
 }
 
-func (v *Validator) NotBlank() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		return
+func notBlank(fieldValue reflect.Value, typeFieldTypeName string) error {
+	if fieldValue.Kind() == reflect.Ptr {
+		return nil
 	}
 
-	if v.typeFieldTypeName != "string" {
-		v.setError(ErrMsgNotStringType)
-		return
+	if typeFieldTypeName != "string" {
+		return errors.New(ErrMsgNotStringType)
 	}
 
-	if v.fieldValue.String() == "" {
-		v.setError(ErrMsgNotBlank)
-		return
+	if fieldValue.String() == "" {
+		return errors.New(ErrMsgNotBlank)
 	}
+
+	return nil
 }
 
-func (v *Validator) Email() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		return
+func email(fieldValue reflect.Value, typeFieldTypeName string) error {
+	if fieldValue.Kind() == reflect.Ptr {
+		return nil
 	}
 
-	if v.typeFieldTypeName != "string" {
-		v.setError(ErrMsgNotStringType)
-		return
+	if typeFieldTypeName != "string" {
+		return errors.New(ErrMsgNotStringType)
 	}
 
-	if !emailRegex.MatchString(v.fieldValue.String()) {
-		v.setError(ErrMsgInvalidEmail)
-		return
+	if !emailRegex.MatchString(fieldValue.String()) {
+		return errors.New(ErrMsgInvalidEmail)
 	}
+
+	return nil
 }
 
-func (v *Validator) URL() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		return
+func checkURL(fieldValue reflect.Value, typeFieldTypeName string) error {
+	if fieldValue.Kind() == reflect.Ptr {
+		return nil
 	}
 
-	if v.typeFieldTypeName != "string" {
-		v.setError(ErrMsgNotStringType)
-		return
+	if typeFieldTypeName != "string" {
+		return errors.New(ErrMsgNotStringType)
 	}
 
-	_, err := url.ParseRequestURI(v.fieldValue.String())
+	_, err := url.ParseRequestURI(fieldValue.String())
 	if err != nil {
-		v.setError(ErrMsgInvalidURL)
-		return
+		return errors.New(ErrMsgInvalidURL)
 	}
+
+	return nil
 }
 
-func (v *Validator) Min() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		return
+func checkMin(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
+	if fieldValue.Kind() == reflect.Ptr {
+		return nil
 	}
 
-	if v.typeFieldTypeName == "string" {
-		if len(v.fieldValue.String()) < v.fieldLength {
-			v.setError(fmt.Sprintf(ErrMsgStrInvalidMin, v.fieldLength))
+	if typeFieldTypeName == "string" {
+		if len(fieldValue.String()) < fieldLength {
+			return fmt.Errorf(ErrMsgStrInvalidMin, fieldLength)
 		}
-		return
+
+		return nil
 	}
 
-	if v.fieldValue.CanInt() {
-		if v.fieldValue.Int() < int64(v.fieldLength) {
-			v.setError(fmt.Sprintf(ErrMsgStrInvalidInt, v.fieldLength))
+	if fieldValue.CanInt() {
+		if fieldValue.Int() < int64(fieldLength) {
+			return fmt.Errorf(ErrMsgStrInvalidInt, fieldLength)
 		}
-		return
+		return nil
 	}
 
-	if v.fieldValue.CanFloat() {
-		if v.fieldValue.Float() < float64(v.fieldLength) {
-			v.setError(fmt.Sprintf(ErrMsgStrInvalidInt, v.fieldLength))
+	if fieldValue.CanFloat() {
+		if fieldValue.Float() < float64(fieldLength) {
+			return fmt.Errorf(ErrMsgStrInvalidInt, fieldLength)
 		}
-		return
+		return nil
 	}
 
-	v.setError(ErrMsgNotStrIntType)
+	return errors.New(ErrMsgNotStrIntType)
 }
 
-func (v *Validator) Max() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		return
+func checkMax(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
+	if fieldValue.Kind() == reflect.Ptr {
+		return nil
 	}
 
-	if v.typeFieldTypeName == "string" {
-		if len(v.fieldValue.String()) > v.fieldLength {
-			v.setError(fmt.Sprintf(ErrMsgStrInvalidMax, v.fieldLength))
+	if typeFieldTypeName == "string" {
+		if len(fieldValue.String()) > fieldLength {
+			return fmt.Errorf(ErrMsgStrInvalidMax, fieldLength)
 		}
-		return
+		return nil
 	}
 
-	if v.fieldValue.CanInt() {
-		if v.fieldValue.Int() > int64(v.fieldLength) {
-			v.setError(fmt.Sprintf(ErrMsgIntInvalidMax, v.fieldLength))
+	if fieldValue.CanInt() {
+		if fieldValue.Int() > int64(fieldLength) {
+			return fmt.Errorf(ErrMsgIntInvalidMax, fieldLength)
 		}
-		return
+		return nil
 	}
 
-	if v.fieldValue.CanFloat() {
-		if v.fieldValue.Float() > float64(v.fieldLength) {
-			v.setError(fmt.Sprintf(ErrMsgIntInvalidMax, v.fieldLength))
+	if fieldValue.CanFloat() {
+		if fieldValue.Float() > float64(fieldLength) {
+			return fmt.Errorf(ErrMsgIntInvalidMax, fieldLength)
 		}
-		return
+		return nil
 	}
 
-	v.setError(ErrMsgNotStrIntType)
+	return errors.New(ErrMsgNotStrIntType)
 }
 
-func (v *Validator) NotEmpty() {
-	if v.fieldValueType.Kind() != reflect.Slice {
-		v.setError(ErrMsgNotArrayType)
-		return
+func notEmpty(fieldValue reflect.Value, fieldValueType reflect.Type) error {
+	if fieldValueType.Kind() != reflect.Slice {
+		return errors.New(ErrMsgNotArrayType)
 	}
 
-	value := v.fieldValue.Len()
-	if value == 0 {
-		v.setError(ErrMsgEmptyArray)
-		return
+	if value := fieldValue.Len(); value == 0 {
+		return errors.New(ErrMsgEmptyArray)
 	}
+
+	return nil
 }
 
-func (v *Validator) IsArray() {
-	if v.fieldValue.Kind() == reflect.Ptr && v.fieldValue.IsNil() {
-		return
+func isArray(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldName string, errorsMap map[string][]string) error {
+	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+		return nil
 	}
 
-	if v.fieldValueType.Kind() != reflect.Slice {
-		v.setError(ErrMsgNotArrayType)
-		return
+	if fieldValueType.Kind() != reflect.Slice {
+		return errors.New(ErrMsgNotArrayType)
 	}
 
-	for i := 0; i < v.fieldValue.Len(); i++ {
-		mapErrors, err := NewValidate(v.fieldValue.Index(i).Interface()).GetErrors()
+	for i := 0; i < fieldValue.Len(); i++ {
+		mapErrors, err := NewValidate(fieldValue.Index(i).Interface()).GetErrors()
 		if err != nil {
-			// TODO: do something to notify the error
-			return
+			return err
 		}
 
 		for subField, arr := range mapErrors {
 			subFieldName := fmt.Sprintf(
 				"%v[%v]: %v",
-				v.typeFieldName,
+				typeFieldName,
 				i,
 				subField,
 			)
-			v.errors[subFieldName] = arr
+			errorsMap[subFieldName] = arr
 		}
 	}
+
+	return nil
 }
 
-func (v *Validator) Len() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		return
+func checkLen(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldTypeName string, fieldLength int) error {
+	if fieldValue.Kind() == reflect.Ptr {
+		return nil
 	}
 
-	if v.typeFieldTypeName != "string" && v.fieldValueType.Kind() != reflect.Slice {
-		v.setError(ErrMsgNotStrSliceType)
-		return
+	if typeFieldTypeName != "string" && fieldValueType.Kind() != reflect.Slice {
+		return errors.New(ErrMsgNotStrSliceType)
 	}
 
-	if v.typeFieldTypeName == "string" && len(v.fieldValue.String()) != v.fieldLength {
-		v.setError(fmt.Sprintf(ErrMsgInvalidLength, v.fieldLength))
-		return
+	if typeFieldTypeName == "string" && len(fieldValue.String()) != fieldLength {
+		return fmt.Errorf(ErrMsgInvalidLength, fieldLength)
 	}
 
-	if v.fieldValueType.Kind() == reflect.Slice && v.fieldValue.Len() != v.fieldLength {
-		v.setError(fmt.Sprintf(ErrMsgInvalidLengthSlice, v.fieldLength))
-		return
+	if fieldValueType.Kind() == reflect.Slice && fieldValue.Len() != fieldLength {
+		return fmt.Errorf(ErrMsgInvalidLengthSlice, fieldLength)
 	}
+
+	return nil
 }
 
-func (v *Validator) Numeric() {
-	if v.fieldValue.Kind() == reflect.Ptr {
-		return
+func numeric(fieldValue reflect.Value, typeFieldTypeName string) error {
+	if fieldValue.Kind() == reflect.Ptr {
+		return nil
 	}
 
-	if v.typeFieldTypeName != "string" {
-		v.setError(ErrMsgNotStringType)
-		return
+	if typeFieldTypeName != "string" {
+		return errors.New(ErrMsgNotStringType)
 	}
 
-	if !numericalRegex.MatchString(v.fieldValue.String()) {
-		v.setError(ErrMsgNotNumeric)
-		return
+	if !numericalRegex.MatchString(fieldValue.String()) {
+		return errors.New(ErrMsgNotNumeric)
 	}
+
+	return nil
 }

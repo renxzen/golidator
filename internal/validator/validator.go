@@ -16,14 +16,6 @@ const (
 type Validator struct {
 	value  reflect.Value
 	errors map[string][]string
-
-	fieldValue     reflect.Value
-	fieldValueType reflect.Type
-	fieldLength    int
-
-	typeField         reflect.StructField
-	typeFieldName     string
-	typeFieldTypeName string
 }
 
 func NewValidate(model any) *Validator {
@@ -38,40 +30,33 @@ func NewValidate(model any) *Validator {
 	}
 }
 
-func (v *Validator) setError(message string) {
-	v.errors[v.typeFieldName] = append(v.errors[v.typeFieldName], message)
-}
-
-func (v *Validator) setFieldData(i int) {
-	// get field value
-	v.fieldValue = v.value.Field(i)
-	v.fieldValueType = v.fieldValue.Type()
-
-	// get field type
-	v.typeField = v.value.Type().Field(i)
-	v.typeFieldTypeName = v.typeField.Type.Name()
-
-	// check if field is a pointer
-	if v.fieldValue.Kind() == reflect.Ptr && !v.fieldValue.IsNil() {
-		v.fieldValue = v.fieldValue.Elem()
-		v.fieldValueType = v.fieldValue.Type()
-		v.typeFieldTypeName = v.fieldValueType.Name()
-	}
-
-	// get json name
-	jsonTag := strings.Split(v.typeField.Tag.Get(JsonTag), ",")
-	if len(jsonTag) > 0 && jsonTag[0] != "" {
-		v.typeFieldName = jsonTag[0]
-	} else {
-		// get field name
-		v.typeFieldName = v.typeField.Name
-	}
-}
-
 func (v *Validator) GetErrors() (map[string][]string, error) {
 	for i := 0; i < v.value.NumField(); i++ {
-		v.setFieldData(i)
-		validateTag := v.typeField.Tag.Get(TagName)
+		// get field value
+		fieldValue := v.value.Field(i)
+		fieldValueType := fieldValue.Type()
+
+		// get field type
+		typeField := v.value.Type().Field(i)
+		typeFieldTypeName := typeField.Type.Name()
+
+		// check if field is a pointer
+		if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
+			fieldValue = fieldValue.Elem()
+			fieldValueType = fieldValue.Type()
+			typeFieldTypeName = fieldValueType.Name()
+		}
+
+		// get json name
+		var typeFieldName string
+		jsonTag := strings.Split(typeField.Tag.Get(JsonTag), ",")
+		if len(jsonTag) > 0 && jsonTag[0] != "" {
+			typeFieldName = jsonTag[0]
+		} else {
+			typeFieldName = typeField.Name
+		}
+
+		validateTag := typeField.Tag.Get(TagName)
 		validators := strings.Split(validateTag, ",")
 
 		for _, validator := range validators {
@@ -84,6 +69,7 @@ func (v *Validator) GetErrors() (map[string][]string, error) {
 				continue
 			}
 
+			var fieldLength int
 			if len(args) > 1 {
 				limit, err := strconv.Atoi(args[1])
 				if err != nil {
@@ -94,32 +80,37 @@ func (v *Validator) GetErrors() (map[string][]string, error) {
 					)
 					return nil, errors.New(message)
 				}
-				v.fieldLength = limit
+				fieldLength = limit
 			}
 
+			var err error
 			switch args[0] {
 			case "notblank":
-				v.NotBlank()
+				err = notBlank(fieldValue, typeFieldTypeName)
 			case "email":
-				v.Email()
+				err = email(fieldValue, typeFieldTypeName)
 			case "numeric":
-				v.Numeric()
+				err = numeric(fieldValue, typeFieldTypeName)
 			case "url":
-				v.URL()
+				err = checkURL(fieldValue, typeFieldTypeName)
 			case "required":
-				v.Required()
+				err = required(fieldValue)
 			case "notempty":
-				v.NotEmpty()
+				err = notEmpty(fieldValue, fieldValueType)
 			case "min":
-				v.Min()
+				err = checkMin(fieldValue, typeFieldTypeName, fieldLength)
 			case "max":
-				v.Max()
+				err = checkMax(fieldValue, typeFieldTypeName, fieldLength)
 			case "len":
-				v.Len()
+				err = checkLen(fieldValue, fieldValueType, typeFieldTypeName, fieldLength)
 			case "isarray":
-				v.IsArray()
+				err = isArray(fieldValue, fieldValueType, typeFieldName, v.errors)
 			default:
 				return nil, fmt.Errorf("unknown validator: %s", args[0])
+			}
+
+			if err != nil {
+				v.errors[typeFieldName] = append(v.errors[typeFieldName], err.Error())
 			}
 		}
 	}
