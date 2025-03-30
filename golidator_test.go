@@ -768,6 +768,7 @@ func TestNumeric(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var errors []golidator.ValidationError
 			var err error
+
 			if tt.badInput.Field1 != 0 {
 				errors, err = golidator.Validate(tt.badInput)
 			} else {

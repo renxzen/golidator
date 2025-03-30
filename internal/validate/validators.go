@@ -141,7 +141,7 @@ func NotEmpty(fieldValue reflect.Value, fieldValueType reflect.Type) error {
 	return nil
 }
 
-func IsArray(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldName string) error {
+func IsArray(fieldValue reflect.Value, fieldValueType reflect.Type) error {
 	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
 		return nil
 	}
