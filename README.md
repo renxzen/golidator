@@ -63,15 +63,11 @@ if len(validationErrors) > 0 {
 - `min`: Validates that a string or numeric value is greater than or equal to a specified limit.
 - `max`: Validates that a string or numeric value is less than or equal to a specified limit.
 - `len`: Validates that a string or a slice value has the same amount of characters or elements.
-- `isarray`: Ensures that a field is a non-nil array and validates its elements recursively.
+- `isarray`: Ensures that a field is a non-nil slice and validates its elements recursively.
 
 ## Todo
 
-- custom validators
-- validate array without `isarray`
-- [x] optimize reflection in loops
-- [x] simplify conditional checks
-- reduce redundancy with type errors
+- [ ] refactor: switch statement for reflect.Type, decouple validations by type
 
 ## License
 

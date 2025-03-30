@@ -13,16 +13,16 @@ var (
 	numericalRegex = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func Required(value reflect.Value) error {
-	if value.Kind() == reflect.Ptr && value.IsNil() {
+func Required(value reflect.Value, kind reflect.Kind) error {
+	if kind == reflect.Ptr && value.IsNil() {
 		return errors.New(ErrMsgMissing)
 	}
 
 	return nil
 }
 
-func NotBlank(value reflect.Value, fieldType string) error {
-	if value.Kind() == reflect.Ptr {
+func NotBlank(value reflect.Value, kind reflect.Kind, fieldType string) error {
+	if kind == reflect.Ptr {
 		return nil
 	}
 
@@ -37,8 +37,8 @@ func NotBlank(value reflect.Value, fieldType string) error {
 	return nil
 }
 
-func Email(value reflect.Value, fieldType string) error {
-	if value.Kind() == reflect.Ptr {
+func Email(value reflect.Value, kind reflect.Kind, fieldType string) error {
+	if kind == reflect.Ptr {
 		return nil
 	}
 
@@ -53,8 +53,8 @@ func Email(value reflect.Value, fieldType string) error {
 	return nil
 }
 
-func URL(value reflect.Value, fieldType string) error {
-	if value.Kind() == reflect.Ptr {
+func URL(value reflect.Value, kind reflect.Kind, fieldType string) error {
+	if kind == reflect.Ptr {
 		return nil
 	}
 
@@ -62,16 +62,15 @@ func URL(value reflect.Value, fieldType string) error {
 		return errors.New(ErrMsgNotStringType)
 	}
 
-	_, err := url.ParseRequestURI(value.String())
-	if err != nil {
+	if _, err := url.ParseRequestURI(value.String()); err != nil {
 		return errors.New(ErrMsgInvalidURL)
 	}
 
 	return nil
 }
 
-func Min(value reflect.Value, fieldType string, fieldLength int) error {
-	if value.Kind() == reflect.Ptr {
+func Min(value reflect.Value, kind reflect.Kind, fieldType string, fieldLength int) error {
+	if kind == reflect.Ptr {
 		return nil
 	}
 
@@ -100,8 +99,8 @@ func Min(value reflect.Value, fieldType string, fieldLength int) error {
 	return errors.New(ErrMsgNotStrIntType)
 }
 
-func Max(value reflect.Value, fieldType string, fieldLength int) error {
-	if value.Kind() == reflect.Ptr {
+func Max(value reflect.Value, kind reflect.Kind, fieldType string, fieldLength int) error {
+	if kind == reflect.Ptr {
 		return nil
 	}
 
@@ -129,20 +128,20 @@ func Max(value reflect.Value, fieldType string, fieldLength int) error {
 	return errors.New(ErrMsgNotStrIntType)
 }
 
-func NotEmpty(value reflect.Value, typeValue reflect.Type) error {
-	if typeValue.Kind() != reflect.Slice {
+func NotEmpty(value reflect.Value, typeValue reflect.Type, kind reflect.Kind) error {
+	if kind != reflect.Slice {
 		return errors.New(ErrMsgNotArrayType)
 	}
 
-	if value := value.Len(); value == 0 {
+	if length := value.Len(); length == 0 {
 		return errors.New(ErrMsgEmptyArray)
 	}
 
 	return nil
 }
 
-func IsArray(value reflect.Value, typeValue reflect.Type) error {
-	if value.Kind() == reflect.Ptr && value.IsNil() {
+func IsArray(value reflect.Value, typeValue reflect.Type, kind reflect.Kind) error {
+	if kind == reflect.Ptr && value.IsNil() {
 		return nil
 	}
 
@@ -153,8 +152,8 @@ func IsArray(value reflect.Value, typeValue reflect.Type) error {
 	return nil
 }
 
-func Len(value reflect.Value, typeValue reflect.Type, fieldType string, fieldLength int) error {
-	if value.Kind() == reflect.Ptr {
+func Len(value reflect.Value, typeValue reflect.Type, kind reflect.Kind, fieldType string, fieldLength int) error {
+	if kind == reflect.Ptr {
 		return nil
 	}
 
@@ -173,8 +172,8 @@ func Len(value reflect.Value, typeValue reflect.Type, fieldType string, fieldLen
 	return nil
 }
 
-func Numeric(value reflect.Value, fieldType string) error {
-	if value.Kind() == reflect.Ptr {
+func Numeric(value reflect.Value, kind reflect.Kind, fieldType string) error {
+	if kind == reflect.Ptr {
 		return nil
 	}
 

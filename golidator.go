@@ -52,6 +52,7 @@ func Validate(model any) ([]ValidationError, error) {
 		if fieldValueKind == reflect.Ptr && !fieldValue.IsNil() {
 			fieldValue = fieldValue.Elem()
 			fieldValueType = fieldValue.Type()
+			fieldValueKind = fieldValue.Kind()
 			fieldTypeName = fieldValueType.Name()
 		}
 
@@ -98,25 +99,25 @@ func Validate(model any) ([]ValidationError, error) {
 			var err error
 			switch validatorName {
 			case "notblank":
-				err = validate.NotBlank(fieldValue, fieldTypeName)
+				err = validate.NotBlank(fieldValue, fieldValueKind, fieldTypeName)
 			case "email":
-				err = validate.Email(fieldValue, fieldTypeName)
+				err = validate.Email(fieldValue, fieldValueKind, fieldTypeName)
 			case "numeric":
-				err = validate.Numeric(fieldValue, fieldTypeName)
+				err = validate.Numeric(fieldValue, fieldValueKind, fieldTypeName)
 			case "url":
-				err = validate.URL(fieldValue, fieldTypeName)
+				err = validate.URL(fieldValue, fieldValueKind, fieldTypeName)
 			case "required":
-				err = validate.Required(fieldValue)
+				err = validate.Required(fieldValue, fieldValueKind)
 			case "notempty":
-				err = validate.NotEmpty(fieldValue, fieldValueType)
+				err = validate.NotEmpty(fieldValue, fieldValueType, fieldValueKind)
 			case "min":
-				err = validate.Min(fieldValue, fieldTypeName, fieldLength)
+				err = validate.Min(fieldValue, fieldValueKind, fieldTypeName, fieldLength)
 			case "max":
-				err = validate.Max(fieldValue, fieldTypeName, fieldLength)
+				err = validate.Max(fieldValue, fieldValueKind, fieldTypeName, fieldLength)
 			case "len":
-				err = validate.Len(fieldValue, fieldValueType, fieldTypeName, fieldLength)
+				err = validate.Len(fieldValue, fieldValueType, fieldValueKind, fieldTypeName, fieldLength)
 			case "isarray":
-				err = validate.IsArray(fieldValue, fieldValueType)
+				err = validate.IsArray(fieldValue, fieldValueType, fieldValueKind)
 
 				if err == nil && fieldValueKind == reflect.Slice {
 					for j := range fieldValue.Len() {
