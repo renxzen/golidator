@@ -13,56 +13,56 @@ var (
 	numericalRegex = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func Required(fieldValue reflect.Value) error {
-	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+func Required(value reflect.Value) error {
+	if value.Kind() == reflect.Ptr && value.IsNil() {
 		return errors.New(ErrMsgMissing)
 	}
 
 	return nil
 }
 
-func NotBlank(fieldValue reflect.Value, typeFieldTypeName string) error {
-	if fieldValue.Kind() == reflect.Ptr {
+func NotBlank(value reflect.Value, fieldType string) error {
+	if value.Kind() == reflect.Ptr {
 		return nil
 	}
 
-	if typeFieldTypeName != "string" {
+	if fieldType != "string" {
 		return errors.New(ErrMsgNotStringType)
 	}
 
-	if fieldValue.String() == "" {
+	if value.String() == "" {
 		return errors.New(ErrMsgNotBlank)
 	}
 
 	return nil
 }
 
-func Email(fieldValue reflect.Value, typeFieldTypeName string) error {
-	if fieldValue.Kind() == reflect.Ptr {
+func Email(value reflect.Value, fieldType string) error {
+	if value.Kind() == reflect.Ptr {
 		return nil
 	}
 
-	if typeFieldTypeName != "string" {
+	if fieldType != "string" {
 		return errors.New(ErrMsgNotStringType)
 	}
 
-	if !emailRegex.MatchString(fieldValue.String()) {
+	if !emailRegex.MatchString(value.String()) {
 		return errors.New(ErrMsgInvalidEmail)
 	}
 
 	return nil
 }
 
-func URL(fieldValue reflect.Value, typeFieldTypeName string) error {
-	if fieldValue.Kind() == reflect.Ptr {
+func URL(value reflect.Value, fieldType string) error {
+	if value.Kind() == reflect.Ptr {
 		return nil
 	}
 
-	if typeFieldTypeName != "string" {
+	if fieldType != "string" {
 		return errors.New(ErrMsgNotStringType)
 	}
 
-	_, err := url.ParseRequestURI(fieldValue.String())
+	_, err := url.ParseRequestURI(value.String())
 	if err != nil {
 		return errors.New(ErrMsgInvalidURL)
 	}
@@ -70,28 +70,28 @@ func URL(fieldValue reflect.Value, typeFieldTypeName string) error {
 	return nil
 }
 
-func Min(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
-	if fieldValue.Kind() == reflect.Ptr {
+func Min(value reflect.Value, fieldType string, fieldLength int) error {
+	if value.Kind() == reflect.Ptr {
 		return nil
 	}
 
-	if typeFieldTypeName == "string" {
-		if len(fieldValue.String()) < fieldLength {
+	if fieldType == "string" {
+		if len(value.String()) < fieldLength {
 			return fmt.Errorf(ErrMsgStrInvalidMin, fieldLength)
 		}
 
 		return nil
 	}
 
-	if fieldValue.CanInt() {
-		if fieldValue.Int() < int64(fieldLength) {
+	if value.CanInt() {
+		if value.Int() < int64(fieldLength) {
 			return fmt.Errorf(ErrMsgStrInvalidInt, fieldLength)
 		}
 		return nil
 	}
 
-	if fieldValue.CanFloat() {
-		if fieldValue.Float() < float64(fieldLength) {
+	if value.CanFloat() {
+		if value.Float() < float64(fieldLength) {
 			return fmt.Errorf(ErrMsgStrInvalidInt, fieldLength)
 		}
 		return nil
@@ -100,27 +100,27 @@ func Min(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) er
 	return errors.New(ErrMsgNotStrIntType)
 }
 
-func Max(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) error {
-	if fieldValue.Kind() == reflect.Ptr {
+func Max(value reflect.Value, fieldType string, fieldLength int) error {
+	if value.Kind() == reflect.Ptr {
 		return nil
 	}
 
-	if typeFieldTypeName == "string" {
-		if len(fieldValue.String()) > fieldLength {
+	if fieldType == "string" {
+		if len(value.String()) > fieldLength {
 			return fmt.Errorf(ErrMsgStrInvalidMax, fieldLength)
 		}
 		return nil
 	}
 
-	if fieldValue.CanInt() {
-		if fieldValue.Int() > int64(fieldLength) {
+	if value.CanInt() {
+		if value.Int() > int64(fieldLength) {
 			return fmt.Errorf(ErrMsgIntInvalidMax, fieldLength)
 		}
 		return nil
 	}
 
-	if fieldValue.CanFloat() {
-		if fieldValue.Float() > float64(fieldLength) {
+	if value.CanFloat() {
+		if value.Float() > float64(fieldLength) {
 			return fmt.Errorf(ErrMsgIntInvalidMax, fieldLength)
 		}
 		return nil
@@ -129,60 +129,60 @@ func Max(fieldValue reflect.Value, typeFieldTypeName string, fieldLength int) er
 	return errors.New(ErrMsgNotStrIntType)
 }
 
-func NotEmpty(fieldValue reflect.Value, fieldValueType reflect.Type) error {
-	if fieldValueType.Kind() != reflect.Slice {
+func NotEmpty(value reflect.Value, typeValue reflect.Type) error {
+	if typeValue.Kind() != reflect.Slice {
 		return errors.New(ErrMsgNotArrayType)
 	}
 
-	if value := fieldValue.Len(); value == 0 {
+	if value := value.Len(); value == 0 {
 		return errors.New(ErrMsgEmptyArray)
 	}
 
 	return nil
 }
 
-func IsArray(fieldValue reflect.Value, fieldValueType reflect.Type) error {
-	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+func IsArray(value reflect.Value, typeValue reflect.Type) error {
+	if value.Kind() == reflect.Ptr && value.IsNil() {
 		return nil
 	}
 
-	if fieldValueType.Kind() != reflect.Slice {
+	if typeValue.Kind() != reflect.Slice {
 		return errors.New(ErrMsgNotArrayType)
 	}
 
 	return nil
 }
 
-func Len(fieldValue reflect.Value, fieldValueType reflect.Type, typeFieldTypeName string, fieldLength int) error {
-	if fieldValue.Kind() == reflect.Ptr {
+func Len(value reflect.Value, typeValue reflect.Type, fieldType string, fieldLength int) error {
+	if value.Kind() == reflect.Ptr {
 		return nil
 	}
 
-	if typeFieldTypeName != "string" && fieldValueType.Kind() != reflect.Slice {
+	if fieldType != "string" && typeValue.Kind() != reflect.Slice {
 		return errors.New(ErrMsgNotStrSliceType)
 	}
 
-	if typeFieldTypeName == "string" && len(fieldValue.String()) != fieldLength {
+	if fieldType == "string" && len(value.String()) != fieldLength {
 		return fmt.Errorf(ErrMsgInvalidLength, fieldLength)
 	}
 
-	if fieldValueType.Kind() == reflect.Slice && fieldValue.Len() != fieldLength {
+	if typeValue.Kind() == reflect.Slice && value.Len() != fieldLength {
 		return fmt.Errorf(ErrMsgInvalidLengthSlice, fieldLength)
 	}
 
 	return nil
 }
 
-func Numeric(fieldValue reflect.Value, typeFieldTypeName string) error {
-	if fieldValue.Kind() == reflect.Ptr {
+func Numeric(value reflect.Value, fieldType string) error {
+	if value.Kind() == reflect.Ptr {
 		return nil
 	}
 
-	if typeFieldTypeName != "string" {
+	if fieldType != "string" {
 		return errors.New(ErrMsgNotStringType)
 	}
 
-	if !numericalRegex.MatchString(fieldValue.String()) {
+	if !numericalRegex.MatchString(value.String()) {
 		return errors.New(ErrMsgNotNumeric)
 	}
 

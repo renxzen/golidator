@@ -69,8 +69,8 @@ if len(validationErrors) > 0 {
 
 - custom validators
 - validate array without `isarray`
-- optimize reflection in loops
-- simplify conditional checks
+- [x] optimize reflection in loops
+- [x] simplify conditional checks
 - reduce redundancy with type errors
 
 ## License

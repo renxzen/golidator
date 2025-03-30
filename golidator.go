@@ -21,42 +21,59 @@ type ValidationError struct {
 
 func Validate(model any) ([]ValidationError, error) {
 	value := reflect.ValueOf(model)
-	if value.Kind() == reflect.Ptr {
+	kind := value.Kind()
+
+	if kind == reflect.Ptr {
+		if value.IsNil() {
+			return nil, nil
+		}
+
 		value = value.Elem()
 	}
 
-	var results []ValidationError
+	if kind != reflect.Struct {
+		return nil, fmt.Errorf("model must be a struct, got %s", kind)
+	}
 
-	for i := range value.NumField() {
+	numField := value.NumField()
+	results := make([]ValidationError, 0, numField) // estimate capacity
+
+	for i := range numField {
 		// get field value
 		fieldValue := value.Field(i)
 		fieldValueType := fieldValue.Type()
+		fieldValueKind := fieldValue.Kind()
 
 		// get field type
-		typeField := value.Type().Field(i)
-		typeFieldTypeName := typeField.Type.Name()
+		fieldType := value.Type().Field(i)
+		fieldTypeName := fieldType.Type.Name()
 
 		// check if field is a pointer
-		if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
+		if fieldValueKind == reflect.Ptr && !fieldValue.IsNil() {
 			fieldValue = fieldValue.Elem()
 			fieldValueType = fieldValue.Type()
-			typeFieldTypeName = fieldValueType.Name()
+			fieldTypeName = fieldValueType.Name()
 		}
 
 		// get json name
-		jsonTag := strings.Split(typeField.Tag.Get(JsonTag), ",")
+		jsonTag := strings.Split(fieldType.Tag.Get(JsonTag), ",")
 
-		var typeFieldName string
+		var fieldName string
 		if len(jsonTag) > 0 && jsonTag[0] != "" {
-			typeFieldName = jsonTag[0]
+			fieldName = jsonTag[0]
 		} else {
-			typeFieldName = typeField.Name
+			fieldName = fieldType.Name
 		}
 
-		valError := ValidationError{Field: typeFieldName}
+		validateTag := fieldType.Tag.Get(TagName)
+		if validateTag == "" {
+			// skip validation if no validation tag is present
+			continue
+		}
 
-		validateTag := typeField.Tag.Get(TagName)
 		validators := strings.SplitSeq(validateTag, ",")
+
+		var valErrors []string
 		for validator := range validators {
 			if validator == "" {
 				continue
@@ -67,48 +84,50 @@ func Validate(model any) ([]ValidationError, error) {
 				continue
 			}
 
+			validatorName := args[0]
+
 			var fieldLength int
 			if len(args) > 1 {
-				limit, err := strconv.Atoi(args[1])
-				if err != nil {
-					return nil, fmt.Errorf("invalid parameter %q used in %q validation", args[1], args[0])
+				var err error
+				fieldLength, err = strconv.Atoi(args[1])
+				if fieldLength < 0 || err != nil {
+					return nil, fmt.Errorf("invalid parameter %q used in %q validation", args[1], validatorName)
 				}
-				fieldLength = limit
 			}
 
 			var err error
-			switch args[0] {
+			switch validatorName {
 			case "notblank":
-				err = validate.NotBlank(fieldValue, typeFieldTypeName)
+				err = validate.NotBlank(fieldValue, fieldTypeName)
 			case "email":
-				err = validate.Email(fieldValue, typeFieldTypeName)
+				err = validate.Email(fieldValue, fieldTypeName)
 			case "numeric":
-				err = validate.Numeric(fieldValue, typeFieldTypeName)
+				err = validate.Numeric(fieldValue, fieldTypeName)
 			case "url":
-				err = validate.URL(fieldValue, typeFieldTypeName)
+				err = validate.URL(fieldValue, fieldTypeName)
 			case "required":
 				err = validate.Required(fieldValue)
 			case "notempty":
 				err = validate.NotEmpty(fieldValue, fieldValueType)
 			case "min":
-				err = validate.Min(fieldValue, typeFieldTypeName, fieldLength)
+				err = validate.Min(fieldValue, fieldTypeName, fieldLength)
 			case "max":
-				err = validate.Max(fieldValue, typeFieldTypeName, fieldLength)
+				err = validate.Max(fieldValue, fieldTypeName, fieldLength)
 			case "len":
-				err = validate.Len(fieldValue, fieldValueType, typeFieldTypeName, fieldLength)
+				err = validate.Len(fieldValue, fieldValueType, fieldTypeName, fieldLength)
 			case "isarray":
 				err = validate.IsArray(fieldValue, fieldValueType)
 
-				if err == nil && fieldValue.Kind() == reflect.Slice {
+				if err == nil && fieldValueKind == reflect.Slice {
 					for j := range fieldValue.Len() {
 						result, subErr := Validate(fieldValue.Index(j).Interface())
 						if subErr != nil {
-							valError.Errors = append(valError.Errors, subErr.Error())
+							valErrors = append(valErrors, subErr.Error())
 							continue
 						}
 
 						for _, arr := range result {
-							subFieldName := fmt.Sprintf("%v[%v]: %v", typeFieldName, j, arr.Field)
+							subFieldName := fmt.Sprintf("%v[%v]: %v", fieldName, j, arr.Field)
 							results = append(results, ValidationError{
 								Field:  subFieldName,
 								Errors: arr.Errors,
@@ -121,12 +140,15 @@ func Validate(model any) ([]ValidationError, error) {
 			}
 
 			if err != nil {
-				valError.Errors = append(valError.Errors, err.Error())
+				valErrors = append(valErrors, err.Error())
 			}
 		}
 
-		if len(valError.Errors) > 0 {
-			results = append(results, valError)
+		if len(valErrors) > 0 {
+			results = append(results, ValidationError{
+				Field:  fieldName,
+				Errors: valErrors,
+			})
 		}
 	}
 	return results, nil
