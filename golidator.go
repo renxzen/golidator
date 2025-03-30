@@ -29,6 +29,7 @@ func Validate(model any) ([]ValidationError, error) {
 		}
 
 		value = value.Elem()
+		kind = value.Kind()
 	}
 
 	if kind != reflect.Struct {

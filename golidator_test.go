@@ -914,3 +914,102 @@ func TestLen(t *testing.T) {
 		})
 	}
 }
+
+func TestPointerStruct(t *testing.T) {
+	type Request struct {
+		Field1 string  `json:"field1" validate:"notblank"`
+		Field2 *string `json:"field2" validate:"required,notblank"`
+	}
+
+	// Helper function to create string pointer
+	strPtr := func(s string) *string {
+		return &s
+	}
+
+	tests := []struct {
+		name          string
+		request       *Request
+		expectedError bool
+		errorFields   []string
+	}{
+		{
+			name: "both fields empty",
+			request: &Request{
+				Field1: "",
+				Field2: strPtr(""),
+			},
+			expectedError: true,
+			errorFields:   []string{"field1", "field2"},
+		},
+		{
+			name: "field1 empty, field2 valid",
+			request: &Request{
+				Field1: "",
+				Field2: strPtr("valid"),
+			},
+			expectedError: true,
+			errorFields:   []string{"field1"},
+		},
+		{
+			name: "field1 valid, field2 nil",
+			request: &Request{
+				Field1: "valid",
+				Field2: nil,
+			},
+			expectedError: true,
+			errorFields:   []string{"field2"},
+		},
+		{
+			name: "field1 valid, field2 empty string",
+			request: &Request{
+				Field1: "valid",
+				Field2: strPtr(""),
+			},
+			expectedError: true,
+			errorFields:   []string{"field2"},
+		},
+		{
+			name: "both fields valid",
+			request: &Request{
+				Field1: "valid",
+				Field2: strPtr("valid"),
+			},
+			expectedError: false,
+			errorFields:   nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errors, err := golidator.Validate(tt.request)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			if tt.expectedError && len(errors) == 0 {
+				t.Errorf("Expected validation errors but got none")
+			}
+
+			if !tt.expectedError && len(errors) > 0 {
+				t.Errorf("Expected no validation errors but got: %v", errors)
+			}
+
+			if tt.expectedError {
+				errorFields := make(map[string]bool)
+				for _, e := range errors {
+					errorFields[e.Field] = true
+				}
+
+				for _, field := range tt.errorFields {
+					if !errorFields[field] {
+						t.Errorf("Expected error for field %q but none was reported", field)
+					}
+				}
+
+				if len(errorFields) != len(tt.errorFields) {
+					t.Errorf("Unexpected number of error fields: got %d, want %d", len(errorFields), len(tt.errorFields))
+				}
+			}
+		})
+	}
+}
