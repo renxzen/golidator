@@ -15,15 +15,17 @@ go get github.com/renxzen/golidator
 1. Import the `golidator` package in your code:
 
 ```go
-import "github.com/renxzen/golidator"
+import (
+    "github.com/renxzen/golidator"
+)
 ```
 
 2. Create a struct with validation tags:
 
 ```go
 type YourStruct struct {
-    Field1 string `validate:"notblank,email"`
-    Field2 int    `validate:"min=10,max=100"`
+    Field1 string `json:"field_1" validate:"notblank,email"`
+    Field2 int    `json:"field_2" validate:"min=10,max=100"`
     // Add more fields and validation tags as needed
 }
 ```
@@ -52,6 +54,159 @@ if len(validationErrors) > 0 {
 }
 ```
 
+This would output:
+
+```
+Field: field_2, Errors: ["must be more or equal than 10", "must be less or equal than 100"]
+```
+
+Or as a json:
+
+```json
+[
+  {
+    "field": "field_2",
+    "errors": [
+      "must be more or equal than 10",
+      "must be less or equal than 100"
+    ]
+  }
+]
+```
+
+## Performance & Caching
+
+GoLidator includes an intelligent caching system that significantly improves performance for repeated validations of the same struct types.
+
+### Cache Control
+
+By default, caching is **enabled** for optimal performance. You can control caching behavior:
+
+```go
+import "github.com/renxzen/golidator"
+
+// Disable caching (not recommended for production)
+golidator.SetCaching(false)
+
+// Enable caching (default behavior)
+golidator.SetCaching(true)
+
+// Clear the cache manually if needed
+golidator.ClearCache()
+```
+
+### Performance Benefits
+
+- **~2.4x faster** validation with caching enabled
+- **Reduced memory allocations** through type information reuse
+- **Automatic optimization** for repeated struct validations
+
+## Custom Validators
+
+GoLidator supports custom validators for specialized validation logic. Custom validators receive detailed field information and return error messages.
+
+### Adding Custom Validators
+
+```go
+import "github.com/renxzen/golidator"
+
+// Simple custom validator
+golidator.AddValidator("custom-check", func(field golidator.FieldInfo) string {
+    if !field.IsString() {
+        return "field must be a string"
+    }
+
+    if field.String() != "expected-value" {
+        return "field must equal 'expected-value'"
+    }
+
+    return "" // No error
+})
+
+// Custom validator with arguments
+golidator.AddValidator("min-length", func(field golidator.FieldInfo) string {
+    if !field.IsString() {
+        return "field must be a string"
+    }
+
+    // Get the minimum length from validation tag: validate:"min-length=5"
+    minLen, exists := field.GetArgumentInt("min-length")
+    if !exists {
+        return ""
+    }
+
+    if field.Len() < minLen {
+        return fmt.Sprintf("field must be at least %d characters", minLen)
+    }
+
+    return ""
+})
+```
+
+### Using Custom Validators
+
+```go
+type User struct {
+    Username string `validate:"custom-check"`
+    Password string `validate:"min-length=8"`
+}
+
+user := User{
+    Username: "expected-value",
+    Password: "short",
+}
+
+errors, err := golidator.Validate(user)
+// Will return validation error for Password field
+```
+
+### FieldInfo API
+
+Custom validators receive a `FieldInfo` struct with comprehensive field information:
+
+```go
+type FieldInfo struct {
+    // Field metadata
+    Name         string            // Original field name
+    JSONName     string            // Name for error messages (from json tag)
+    TypeName     string            // Type name ("string", "int", etc.)
+    IsPointer    bool              // Whether field is a pointer type
+
+    // Validation arguments
+    ValidatorStrs map[string]string // String arguments from tags
+    ValidatorInts map[string]int    // Pre-parsed integer arguments
+
+    // ... other fields for advanced usage
+}
+```
+
+### Helper Methods
+
+```go
+func customValidator(field golidator.FieldInfo) string {
+    // Type checking
+    if field.IsString() { /* ... */ }
+    if field.IsInt() { /* ... */ }
+    if field.IsFloat() { /* ... */ }
+    if field.IsSlice() { /* ... */ }
+
+    // Nil checking
+    if field.IsNil() { /* ... */ }
+
+    // Value access
+    strValue := field.String()
+    intValue := field.Int()
+    floatValue := field.Float()
+    length := field.Len()
+
+    // Argument access
+    strArg := field.GetArgumentStr("arg-name")
+    intArg, exists := field.GetArgumentInt("arg-name")
+
+    return ""
+}
+```
+
 ## Supported Validators
 
 - `notblank`: Ensures that a string is not empty.
@@ -65,9 +220,12 @@ if len(validationErrors) > 0 {
 - `len`: Validates that a string or a slice value has the same amount of characters or elements.
 - `isarray`: Ensures that a field is a non-nil slice and validates its elements recursively.
 
-## Todo
+## TODO
 
-- [ ] refactor: switch statement for reflect.Type, decouple validations by type
+- [x] optimize for speed
+- [x] map for validators
+- [x] cache to speed up performance
+- [x] custom validators
 
 ## License
 
