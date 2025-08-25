@@ -34,7 +34,7 @@ type YourStruct struct {
 
 ```go
 data := YourStruct{
-    Field1: "test@example.com",
+    Field1: "test@example",
     Field2: 5,
     // Set values for other fields
 }
@@ -57,7 +57,8 @@ if len(validationErrors) > 0 {
 This would output:
 
 ```
-Field: field_2, Errors: ["must be more or equal than 10", "must be less or equal than 100"]
+Field: field_1, Errors: ["must be a valid email"]
+Field: field_2, Errors: ["must be more or equal than 10"]
 ```
 
 Or as a json:
@@ -65,10 +66,15 @@ Or as a json:
 ```json
 [
   {
+    "field": "field_1",
+    "errors": [
+      "must be a valid email"
+    ]
+  },
+  {
     "field": "field_2",
     "errors": [
-      "must be more or equal than 10",
-      "must be less or equal than 100"
+      "must be more or equal than 10"
     ]
   }
 ]
@@ -90,9 +96,6 @@ golidator.SetCaching(false)
 
 // Enable caching (default behavior)
 golidator.SetCaching(true)
-
-// Clear the cache manually if needed
-golidator.ClearCache()
 ```
 
 ### Performance Benefits
