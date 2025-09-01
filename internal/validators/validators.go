@@ -59,7 +59,12 @@ func URL(field fieldinfo.Info) string {
 		return MessageNotStringType
 	}
 
-	if _, err := url.ParseRequestURI(field.String()); err != nil {
+	str := field.String()
+	if str == "" {
+		return ""
+	}
+
+	if _, err := url.ParseRequestURI(str); err != nil {
 		return MessageInvalidURL
 	}
 
