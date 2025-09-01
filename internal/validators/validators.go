@@ -19,6 +19,10 @@ func Required(field fieldinfo.Info) string {
 }
 
 func NotBlank(field fieldinfo.Info) string {
+	if !field.IsRequired && field.IsNil() {
+		return ""
+	}
+
 	if !field.IsString() {
 		return MessageNotStringType
 	}
@@ -31,6 +35,10 @@ func NotBlank(field fieldinfo.Info) string {
 }
 
 func Email(field fieldinfo.Info) string {
+	if !field.IsRequired && field.IsNil() {
+		return ""
+	}
+
 	if !field.IsString() {
 		return MessageNotStringType
 	}
@@ -43,6 +51,10 @@ func Email(field fieldinfo.Info) string {
 }
 
 func URL(field fieldinfo.Info) string {
+	if !field.IsRequired && field.IsNil() {
+		return ""
+	}
+
 	if !field.IsString() {
 		return MessageNotStringType
 	}
@@ -55,6 +67,14 @@ func URL(field fieldinfo.Info) string {
 }
 
 func Min(field fieldinfo.Info) string {
+	if !field.IsRequired && field.IsNil() {
+		return ""
+	}
+
+	if field.IsNil() {
+		return ""
+	}
+
 	minValue, exists := field.GetArgumentInt("min")
 	if !exists {
 		return ""
@@ -85,6 +105,10 @@ func Min(field fieldinfo.Info) string {
 }
 
 func Max(field fieldinfo.Info) string {
+	if !field.IsRequired && field.IsNil() {
+		return ""
+	}
+
 	maxValue, exists := field.GetArgumentInt("max")
 	if !exists {
 		return ""
@@ -160,6 +184,10 @@ func Len(field fieldinfo.Info) string {
 }
 
 func Numeric(field fieldinfo.Info) string {
+	if !field.IsRequired && field.IsNil() {
+		return ""
+	}
+
 	if !field.IsString() {
 		return MessageNotStringType
 	}

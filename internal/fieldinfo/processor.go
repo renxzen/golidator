@@ -36,7 +36,7 @@ func ExtractInfo(structValue reflect.Value, fieldIndex int) Info {
 	}
 
 	validateTag := field.Tag.Get(ValidateTag)
-	validatorArgs, validatorInts := parseValidatorArgs(validateTag)
+	validatorArgs, validatorInts, isRequired := parseValidatorArgs(validateTag)
 
 	return Info{
 		Index:         fieldIndex,
@@ -51,14 +51,16 @@ func ExtractInfo(structValue reflect.Value, fieldIndex int) Info {
 		Value:         fieldValue,
 		ValidatorStrs: validatorArgs,
 		ValidatorInts: validatorInts,
+		IsRequired:    isRequired,
 	}
 }
 
-func parseValidatorArgs(validateTag string) (map[string]string, map[string]int) {
+func parseValidatorArgs(validateTag string) (map[string]string, map[string]int, bool) {
 	args := make(map[string]string)
 	ints := make(map[string]int)
+	isRequired := false
 	if validateTag == "" {
-		return args, ints
+		return args, ints, isRequired
 	}
 
 	validators := strings.SplitSeq(validateTag, ",")
@@ -68,8 +70,9 @@ func parseValidatorArgs(validateTag string) (map[string]string, map[string]int) 
 			continue
 		}
 
+		validatorName := validator
 		if idx := strings.IndexByte(validator, '='); idx != -1 {
-			validatorName := validator[:idx]
+			validatorName = validator[:idx]
 			value := validator[idx+1:]
 			if value != "" {
 				args[validatorName] = value
@@ -79,7 +82,11 @@ func parseValidatorArgs(validateTag string) (map[string]string, map[string]int) 
 				}
 			}
 		}
+
+		if validatorName == "required" {
+			isRequired = true
+		}
 	}
 
-	return args, ints
+	return args, ints, isRequired
 }

@@ -53,6 +53,10 @@ type Info struct {
 	// For validate:"min=10", this would contain {"min": 10}
 	// This optimization avoids repeated string-to-int conversions during validation.
 	ValidatorInts map[string]int
+
+	// IsRequired indicates whether the field has the "required" validator.
+	// This allows validators to skip validation on nil pointer fields that are not required.
+	IsRequired bool
 }
 
 // GetValue returns the underlying reflect.Value of the field.
