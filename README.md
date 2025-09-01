@@ -174,6 +174,7 @@ type FieldInfo struct {
     JSONName     string            // Name for error messages (from json tag)
     TypeName     string            // Type name ("string", "int", etc.)
     IsPointer    bool              // Whether field is a pointer type
+    IsRequired   bool              // Whether field has "required" validator
 
     // Validation arguments
     ValidatorStrs map[string]string // String arguments from tags
@@ -187,6 +188,11 @@ type FieldInfo struct {
 
 ```go
 func customValidator(field golidator.FieldInfo) string {
+    // Skip validation for non-required nil pointer fields
+    if !field.IsRequired && field.IsNil() {
+        return ""
+    }
+
     // Type checking
     if field.IsString() { /* ... */ }
     if field.IsInt() { /* ... */ }
