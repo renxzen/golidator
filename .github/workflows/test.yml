@@ -20,7 +20,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          # we disable caching since this lib doesn't have
+          # external dependencies so it lacks a go.sum
+          cache: false
 
       - name: Vet
         run: go vet ./...
